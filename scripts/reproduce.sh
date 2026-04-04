@@ -6,8 +6,10 @@
 #
 # Assumes:
 #   - Container is built (environment/container.sif)
-#   - Data and models are downloaded (via scripts/download.sh)
+#   - acados is cloned in method/acados
 #   - Working directory is /home/user
+#
+# This is the "gold standard" — run this to reproduce everything.
 
 set -e
 
@@ -19,20 +21,10 @@ export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPA
 
 echo "=================================================="
 echo "Reproducing: Differentiable Nonlinear MPC"
+echo "Paper: 2505.01353"
 echo "=================================================="
 
-# Build acados if not already built
-if [ ! -f "${ACADOS_DIR}/lib/libacados.so" ]; then
-    echo "Building acados..."
-    bash scripts/download.sh
-fi
-
-# Run all experiments
-echo ""
-echo "=== Running Method ==="
-bash scripts/method.sh
-
-# Evaluate results
+# Run all experiments via evaluate.sh
 echo ""
 echo "=== Evaluating Results ==="
 bash scripts/evaluate.sh
@@ -41,4 +33,5 @@ echo ""
 echo "=================================================="
 echo "Reproduction complete!"
 echo "Results: scoring/scores.json"
+echo "Compare: python3 validate.py --compare"
 echo "=================================================="

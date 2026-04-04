@@ -1,10 +1,7 @@
 #!/bin/bash
 # Run the paper's method using acados.
 #
-# This script runs the acados differentiable MPC method:
-# 1. Pendulum OCP sensitivity (Section 5.1 - core claim)
-# 2. LQR benchmark (Section 5.2)
-# 3. Chain of masses (Section 5.3)
+# This script runs the acados differentiable MPC method experiments.
 #
 # Usage:
 #   bash scripts/method.sh
@@ -21,7 +18,7 @@ echo "=== Running acados differentiable MPC experiments ==="
 
 # Run pendulum experiment (Section 5.1 - core claim)
 echo ""
-echo "=== Section 5.1: Pendulum OCP Sensitivity ==="
+echo "=== Section 5.1: Pendulum OCP Sensitivity (Core Claim) ==="
 python3 method/pendulum_sensitivity.py
 
 # Run LQR benchmark (Section 5.2)
@@ -33,6 +30,11 @@ python3 method/lqr_benchmark.py
 echo ""
 echo "=== Section 5.3: Chain of Masses ==="
 python3 method/chain_sensitivity.py
+
+# Evaluate
+echo ""
+echo "=== Evaluating Results ==="
+bash scripts/evaluate.sh
 
 echo ""
 echo "=== Method run complete ==="

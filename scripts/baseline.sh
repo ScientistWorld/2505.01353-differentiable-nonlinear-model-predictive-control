@@ -20,14 +20,9 @@ export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
 export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
 
 echo "=== Running Baseline (Gauss-Newton Hessian) ==="
+echo "This demonstrates that GN Hessian gives WRONG sensitivities."
 
-python3 -c "
-import sys
-sys.path.insert(0, '/home/user/method')
-import pendulum_sensitivity
-# Just run the GN part
-import numpy as np
-pendulum_sensitivity.run_pendulum_experiment()
-"
+# Run the pendulum experiment which compares EXACT vs GAUSS_NEWTON
+python3 method/pendulum_sensitivity.py
 
 echo "Baseline run complete."
