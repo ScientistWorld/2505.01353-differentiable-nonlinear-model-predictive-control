@@ -1,30 +1,23 @@
 # Reproduction Milestones
 
-**Current: none**
-
-<!-- Milestone levels (update "Current" above as you progress):
-  none             — just started, no meaningful progress yet
-  method_runs      — the paper's method executes end-to-end without errors
-  core_claim       — minimum experiment supports the paper's central claim
-  core_claim_plus  — core claim reproduced on additional settings
-  secondary_claims — secondary results or contributions reproduced
-  majority         — more than half of reported results reproduced
-  near_complete    — most results reproduced, only minor gaps remain
-  full             — all reported results reproduced
--->
+**Current: method_runs**
 
 ## Progress Log
 
-<!-- Write your progress here -->
+### [2026-04-04] - method_runs
+- Read the paper thoroughly (2505.01353 - Differentiable Nonlinear Model Predictive Control)
+- Filled in all briefing files (problem.md, method.md, evaluation.md, overview.md)
+- Created reference.json with paper's 3 main experiments
+- Cloned acados repository into method/acados
+- Studied acados examples: pendulum OCP sensitivities, chain of masses, LQR benchmark
+- Implemented pendulum_sensitivity.py (Section 5.1 - core claim)
+- Implemented lqr_benchmark.py (Section 5.2)
+- Implemented chain_sensitivity.py (Section 5.3)
+- Wrote evaluator.py in eval/
+- Set up environment: container.def (CUDA base), setup.sh (dependencies)
+- Wrote all scripts: download.sh, method.sh, reproduce.sh, baseline.sh, evaluate.sh, run.sh
+- Submitted job to build acados and run experiments
 
 ## Stop Justification
 
 <!-- Do not edit this unless you decide to stop -->
-
-<!-- Write a brief explanation of WHY you are stopping at this milestone.
-     What blocked you to reach the next milestone and you decided to stop?
-     This is NOT a progress summary — the Progress Log above covers that.
-     Example: "Stopping at core_claim because the full dataset requires
-     proprietary access. Core claim validated on the public subset." -->
-
-<!-- ALWAYS fill in this section when you wrap up. NEVER remove this section. -->
