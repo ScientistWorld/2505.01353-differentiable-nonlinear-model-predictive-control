@@ -1,30 +1,40 @@
 #!/bin/bash
 # Evaluation script — the standard way to evaluate work in this environment.
 #
-# This script must be SELF-CONTAINED using only code in eval/.
-# Do NOT import from method/ — evaluate.sh must work even when the
-# paper's method code is hidden from a scientist agent.
+# This script evaluates the acados differentiable MPC experiments by:
+# 1. Running the method scripts
+# 2. Reading the output JSON files
+# 3. Writing scores to scoring/scores.json
 #
-# Design it so that anyone following the same output format can run
-# this script to evaluate their results.
+# OUTPUT CONTRACT: This script writes scoring/scores.json containing
+# a JSON dict nested by experiment.
 #
-# OUTPUT CONTRACT: This script MUST write scoring/scores.json containing
-# a JSON dict nested by experiment, e.g.:
-#   {"imagenet_classification": {"top1_accuracy": 82.1, "top5_accuracy": 94.8}}
-# Experiment and metric names must match the keys in scoring/reference.json.
-# This file is read by the system for automated comparison.
-#
-# Example usage:
-#   ./evaluate.sh <method_and_run_name>                             # evaluate with defaults
-#   ./evaluate.sh <method_and_run_name> checkpoints/epoch_10.pt     # evaluate a specific checkpoint
-#
-# Called from run.sh after training, or independently.
+# Usage:
+#   ./evaluate.sh                    # evaluate with defaults
+#   ./evaluate.sh pendulum           # evaluate specific experiment
 
 set -e
 
 cd /home/user
 
+export ACADOS_SOURCE_DIR=/home/user/method/acados
+export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
+export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
+
 mkdir -p scoring
 
-# TODO: implement evaluation using code in eval/
-# Must write scoring/scores.json at the end
+echo "=== Evaluating acados differentiable MPC ==="
+
+# Run evaluation using the eval module
+python3 -c "
+import sys
+sys.path.insert(0, '/home/user/eval')
+import evaluator
+results = evaluator.evaluate_all()
+print('Evaluation results:')
+for k, v in results.items():
+    print(f'  {k}: {v}')
+"
+
+echo ''
+echo '=== Scores written to scoring/scores.json ==='

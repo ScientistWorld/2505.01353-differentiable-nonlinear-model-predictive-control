@@ -1,19 +1,17 @@
 #!/bin/bash
 # Install Python packages into the container overlay.
 #
-# This script is run by the system on the login node (which has internet)
-# inside the container with a persistent overlay. Changes persist across
-# job submissions without rebuilding the container.
-#
-# Put ALL pip installs here, NOT in container.def.
-# Only use container.def for the base Docker image and apt-get packages.
-#
-# IMPORTANT: Install into the SYSTEM Python, not a virtual environment.
-# The overlay may be recreated on container rebuilds — a venv inside
-# it will be lost and all subsequent jobs will fail.
-# Use: uv pip install --system <packages>
-# Do NOT create a venv (python -m venv, virtualenv, etc.).
+# Run by the system on the login node inside the container with a persistent overlay.
 
 set -e
 
-# uv pip install --system <packages>
+# Install Python packages needed for acados Python interface
+uv pip install --system numpy scipy matplotlib
+
+# Install casadi (required for acados OCP formulation)
+uv pip install --system casadi
+
+# Install acados_template (Python interface)
+cd /home/user/method/acados/interfaces/acados_template
+uv pip install --system -e .
+cd /home/user

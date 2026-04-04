@@ -1,30 +1,58 @@
 #!/bin/bash
-# Download all data and models needed for this environment.
+# Download and build acados from source.
+#
+# Estimated total download size: ~50 MB (git clone)
+# Estimated disk usage after build: ~2 GB
 #
 # Run on a node with internet access BEFORE building the container
 # or submitting compute jobs.
-#
-# This script should be idempotent — safe to run multiple times.
-# It should skip files that already exist.
-#
-# Update the storage estimate below as you add downloads.
-#
-# Estimated total download size: TODO GB
-# Estimated disk usage after extraction: TODO GB
-#
-# During reproduction, prefer downloading to shared directories
-# (shared/datasets/, shared/models/) so other papers can reuse them.
-# You do not need to run this script during reproduction — it exists
-# for future portability. Write it to download to workspace-local
-# paths (data/, checkpoints/) instead of the shared directories
-# so a future user with just the workspace can run this script and get everything they need.
 
 set -e
 
-cd "$(dirname "$0")"
+cd /home/user
 
-# TODO: implement downloads
-# Examples:
-#   wget -nc https://example.com/dataset.tar.gz -P data/
-#   python -c "from huggingface_hub import snapshot_download; snapshot_download('model/name', local_dir='checkpoints/')"
-#   huggingface-cli download Qwen/Qwen3-1.7B --local-dir /checkpoints/Qwen3-1.7B
+# Check if acados is already cloned
+if [ -d "method/acados" ]; then
+    echo "acados already cloned, checking submodules..."
+    cd method/acados
+    git submodule update --recursive --init 2>/dev/null || true
+    cd /home/user
+else
+    echo "Cloning acados repository..."
+    git clone --recursive https://github.com/acados/acados.git method/acados
+fi
+
+ACADOS_DIR="/home/user/method/acados"
+
+# Download t_renderer binaries if not present
+TERA_RENDERER_DIR="${ACADOS_DIR}/bin/t_renderer"
+if [ ! -f "${TERA_RENDERER_DIR}/t_renderer" ]; then
+    echo "Downloading t_renderer binaries..."
+    mkdir -p "${TERA_RENDERER_DIR}"
+    TERA_VERSION="v0.0.41"
+    ARCH=$(uname -m)
+    case "${ARCH}" in
+        x86_64) TERA_ARCH="linux64" ;;
+        aarch64) TERA_ARCH="linux-arm64" ;;
+        *) echo "Unknown architecture: ${ARCH}"; exit 1 ;;
+    esac
+    TERA_URL="https://github.com/acados/tera_renderer/releases/download/${TERA_VERSION}/t_renderer_${TERA_ARCH}"
+    curl -sSL "${TERA_URL}" -o "${TERA_RENDERER_DIR}/t_renderer"
+    chmod +x "${TERA_RENDERER_DIR}/t_renderer"
+fi
+
+# Build acados as shared library
+echo "Building acados..."
+mkdir -p "${ACADOS_DIR}/build"
+cd "${ACADOS_DIR}/build"
+cmake -DACADOS_WITH_QPOASES=ON \
+      -DACADOS_WITH_OSQP=OFF \
+      -DACADOS_WITH_HPIPM=ON \
+      -DBUILD_SHARED_LIBS=ON \
+      -DACADOS_EXTERNAL_HPMPC=OFF \
+      -DACADOS_WITH_QORE=OFF \
+      ..
+make install -j$(nproc)
+
+echo "acados build complete."
+echo "LD_LIBRARY_PATH should include: ${ACADOS_DIR}/lib"

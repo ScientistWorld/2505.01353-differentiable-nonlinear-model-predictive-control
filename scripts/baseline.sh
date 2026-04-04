@@ -1,20 +1,33 @@
 #!/bin/bash
-# Run a baseline method from the paper.
+# Run baseline method from the paper.
 #
-# Baselines are simple reference methods the paper compares against. 
-# Implement this only if applicable, i.e. the paper has baselines.
-# You do not need to implement all baselines to begin — 
-# just enough to validate that the evaluation pipeline works 
-# and provide a reference point. You can decide to expand more baselines later.
-# Each baseline must be actually run and scored through evaluate.sh
-# so the numbers are verified, not self-reported.
-# You can decide what this baseline script should do yourself.
+# The paper compares against Gauss-Newton Hessian approximation (a common
+# baseline in differentiable optimization). This baseline gives WRONG
+# sensitivities - the paper shows this as a key pitfall (Remark 3).
+#
+# This baseline script runs the pendulum OCP with GAUSS_NEWTON Hessian
+# to reproduce the paper's demonstration that this approach fails.
 #
 # Usage:
-#   bash scripts/baseline.sh <name>
+#   bash scripts/baseline.sh
 
 set -e
 
 cd /home/user
 
-# TODO: run baseline
+export ACADOS_SOURCE_DIR=/home/user/method/acados
+export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
+export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
+
+echo "=== Running Baseline (Gauss-Newton Hessian) ==="
+
+python3 -c "
+import sys
+sys.path.insert(0, '/home/user/method')
+import pendulum_sensitivity
+# Just run the GN part
+import numpy as np
+pendulum_sensitivity.run_pendulum_experiment()
+"
+
+echo "Baseline run complete."

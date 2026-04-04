@@ -1,0 +1,82 @@
+{
+  "experiments": {
+    "bounded_lqr_umax_high": {
+      "description": "Bounded LQR OCP with u_max=10^4: timing for solving n_batch=128 problems with adjoint sensitivities. N=20, nx=8, nu=4, n_theta=248. From Table 1 of the paper.",
+      "weight": 0.35,
+      "primary_metric": "solve_and_sens_time_ms",
+      "metrics": {
+        "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0},
+        "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.5},
+        "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.5}
+      },
+      "results": {
+        "acados": {
+          "type": "proposed",
+          "solve_and_sens_time_ms": 34.5,
+          "speedup_vs_mpc_pytorch": 3.6,
+          "speedup_vs_cvxpygen": 19.0
+        },
+        "mpc_pytorch": {
+          "type": "baseline",
+          "solve_and_sens_time_ms": 125.0,
+          "speedup_vs_mpc_pytorch": 1.0,
+          "speedup_vs_cvxpygen": 5.3
+        },
+        "cvxpygen_osqp": {
+          "type": "baseline",
+          "solve_and_sens_time_ms": 658.0,
+          "speedup_vs_mpc_pytorch": 0.19,
+          "speedup_vs_cvxpygen": 1.0
+        }
+      }
+    },
+    "bounded_lqr_umax_low": {
+      "description": "Bounded LQR OCP with u_max=1.0: timing for solving n_batch=128 problems with adjoint sensitivities. N=20, nx=8, nu=4, n_theta=248. From Table 1 of the paper. Note: mpc.pytorch fails to converge consistently in this setting.",
+      "weight": 0.35,
+      "primary_metric": "solve_and_sens_time_ms",
+      "metrics": {
+        "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0},
+        "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.5},
+        "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.5}
+      },
+      "results": {
+        "acados": {
+          "type": "proposed",
+          "solve_and_sens_time_ms": 42.0,
+          "speedup_vs_mpc_pytorch": 520.0,
+          "speedup_vs_cvxpygen": 160.0
+        },
+        "mpc_pytorch": {
+          "type": "baseline",
+          "solve_and_sens_time_ms": 21899.0,
+          "speedup_vs_mpc_pytorch": 1.0,
+          "speedup_vs_cvxpygen": 0.32
+        },
+        "cvxpygen_osqp": {
+          "type": "baseline",
+          "solve_and_sens_time_ms": 6845.0,
+          "speedup_vs_mpc_pytorch": 3.2,
+          "speedup_vs_cvxpygen": 1.0
+        }
+      }
+    },
+    "pendulum_sensitivity_accuracy": {
+      "description": "Highly-parametric pendulum OCP: sensitivity accuracy vs finite differences. Cart-pole system, N=50, nx=4, nu=1, n_theta=1. Core claim: acados sensitivities match FD (error ~0.01), while Gauss-Newton Hessian gives completely wrong results (error ~10).",
+      "weight": 0.3,
+      "primary_metric": "sensitivity_max_error",
+      "metrics": {
+        "sensitivity_max_error": {"higher_is_better": false, "coefficient": -1.0}
+      },
+      "results": {
+        "acados_exact_hessian": {
+          "type": "proposed",
+          "sensitivity_max_error": 0.01
+        },
+        "gauss_newton_approx": {
+          "type": "baseline",
+          "sensitivity_max_error": 10.0
+        }
+      }
+    }
+  }
+}
