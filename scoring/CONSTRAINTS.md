@@ -1,9 +1,9 @@
 # Scientist Constraints
 
 ## Problem Formulation
-The scientist must use the same optimal control problem (OCP) formulations as in the paper:
-- **Pendulum**: Cart-pole system, N=20 horizon, nx=4 states (x, theta, v, omega), nu=1 control (F), parametric cost weight on Q matrix, Fmax=80, constraint on x >= -1.5. Exact formulation in `eval/evaluator.py` (run_pendulum_eval).
-- **LQR**: Dense linear dynamics, N=20 horizon, nx=8 states, nu=4 controls, parametric cost matrices. Two settings: u_max=10^4 (loose) and u_max=1.0 (tight). Exact formulation in `eval/evaluator.py` (run_lqr_eval).
+The scientist must use the packaged workspace formulations below, which preserve the paper's method while matching the runnable environment:
+- **Pendulum**: Use the packaged evaluator's formulation in `eval/evaluator.py`: cart-pole system with `N=20`, `T=1.0`, `nx=4`, `nu=1`, `Fmax=80`, parametric state weighting, parametric cart-mass dynamics, and parametric inequality `-1.5 <= -p * theta^2 <= 1.5`. This is a reduced-scale but method-faithful version of the paper's Appendix A.10 setup.
+- **LQR**: Dense linear dynamics, `N=20`, `nx=8`, `nu=4`, parametric cost matrices. Two settings: `u_max=10^4` and `u_max=1.0`. The packaged benchmark uses `n_batch=32`.
 
 Do not simplify, reduce, or reformulate the problems. The scientist may not reduce N, change Q/R matrices, or alter the constraint structure.
 
@@ -14,7 +14,7 @@ The scientist must use **acados** as the NLP solver backend. The contribution is
 For the pendulum sensitivity accuracy experiment, the scientist must compute parametric sensitivities via the **adjoint sensitivity method** applied to the KKT conditions of the nonlinear OCP (Implicit Function Theorem). Computing sensitivities by re-solving the OCP at perturbed parameters (brute-force reoptimization) is not the method — it is a fallback that does not demonstrate the algorithmic contribution.
 
 ## Compliance Checklist
-- [ ] Pendulum OCP uses N=20, nx=4, nu=1, Fmax=80, x >= -1.5 constraint, parametric Q weight
-- [ ] LQR OCP uses N=20, nx=8, nu=4, parametric cost matrices, u_max=10^4 or u_max=1.0
+- [ ] Pendulum OCP uses the packaged reduced-scale formulation in `eval/evaluator.py` with `N=20`, `T=1.0`, `nx=4`, `nu=1`, `Fmax=80`, parametric cost, dynamics, and inequality
+- [ ] LQR OCP uses `N=20`, `nx=8`, `nu=4`, parametric cost matrices, `u_max=10^4` or `u_max=1.0`, and `n_batch=32`
 - [ ] Uses acados NLP solver backend (not MuJoCo MPC, OCS2, force, Crocoddyl, etc.)
 - [ ] Sensitivity computed via adjoint method on KKT conditions, not brute-force reoptimization

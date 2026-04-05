@@ -1,15 +1,10 @@
 #!/bin/bash
-# Run baseline method from the paper.
+# Run the paper's simplest baseline comparison.
 #
-# The paper compares against Gauss-Newton Hessian approximation (a common
-# baseline in differentiable optimization). This baseline gives WRONG
-# sensitivities - the paper shows this as a key pitfall (Remark 3).
-#
-# This baseline script runs the pendulum OCP with GAUSS_NEWTON Hessian
-# to reproduce the paper's demonstration that this approach fails.
-#
-# Usage:
-#   bash scripts/baseline.sh
+# The paper's most important baseline for the core claim is the Gauss-Newton
+# Hessian approximation on the pendulum sensitivity task. This script runs the
+# pendulum evaluation and stores the resulting baseline/proposed metrics in a
+# baseline artifact for inspection.
 
 set -e
 
@@ -19,10 +14,17 @@ export ACADOS_SOURCE_DIR=/home/user/method/acados
 export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
 export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
 
-echo "=== Running Baseline (Gauss-Newton Hessian) ==="
-echo "This demonstrates that GN Hessian gives WRONG sensitivities."
+mkdir -p baseline
 
-# Run the pendulum experiment which compares EXACT vs GAUSS_NEWTON
-python3 method/pendulum_sensitivity.py
+python3 - <<'PY'
+import json
+import sys
+sys.path.insert(0, "/home/user/eval")
+import evaluator
 
-echo "Baseline run complete."
+results = evaluator.run_pendulum_eval()
+with open("/home/user/baseline/pendulum_gn_baseline.json", "w", encoding="utf-8") as f:
+    json.dump(results, f, indent=2)
+
+print(json.dumps(results, indent=2))
+PY

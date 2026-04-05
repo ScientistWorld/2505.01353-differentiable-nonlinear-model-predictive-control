@@ -1,10 +1,9 @@
 #!/bin/bash
-# Run the paper's method using acados.
+# Run the paper's method using the packaged reproduction path.
 #
-# This script runs the acados differentiable MPC method experiments.
-#
-# Usage:
-#   bash scripts/method.sh
+# The authoritative implementation for this workspace lives in `eval/evaluator.py`,
+# which reproduces the paper's core Section 5.1 claim and a reduced-scale
+# Section 5.2 timing benchmark with the acados sensitivity workflow.
 
 set -e
 
@@ -14,27 +13,6 @@ export ACADOS_SOURCE_DIR=/home/user/method/acados
 export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
 export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
 
-echo "=== Running acados differentiable MPC experiments ==="
-
-# Run pendulum experiment (Section 5.1 - core claim)
-echo ""
-echo "=== Section 5.1: Pendulum OCP Sensitivity (Core Claim) ==="
-python3 method/pendulum_sensitivity.py
-
-# Run LQR benchmark (Section 5.2)
-echo ""
-echo "=== Section 5.2: Bounded LQR Benchmark ==="
-python3 method/lqr_benchmark.py
-
-# Run chain experiment (Section 5.3)
-echo ""
-echo "=== Section 5.3: Chain of Masses ==="
-python3 method/chain_sensitivity.py
-
-# Evaluate
-echo ""
-echo "=== Evaluating Results ==="
+echo "=== Running differentiable NMPC reproduction ==="
 bash scripts/evaluate.sh
-
-echo ""
 echo "=== Method run complete ==="

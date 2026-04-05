@@ -19,7 +19,7 @@ Check off items as you complete them. Order doesn't matter — work however make
 ## Code
 - [x] Evaluation code in `eval/`
 - [x] Method implementation in `method/`
-- [ ] Baseline implementation in `baseline/` (if applicable)
+- [x] Baseline implementation in `baseline/` (if applicable)
 
 ## Scripts
 - [x] `scripts/evaluate.sh`
@@ -31,8 +31,8 @@ Check off items as you complete them. Order doesn't matter — work however make
 - [x] `environment/container.def` + `environment/setup.sh`
 
 ## Data
-- [ ] Dataset acquired (shared dir or `data/`) — N/A, uses procedural models
-- [ ] Pretrained models downloaded if needed — N/A
+- [x] Dataset acquired (shared dir or `data/`) — N/A, uses procedural models
+- [x] Pretrained models downloaded if needed — N/A
 
 ## Milestones
 - [x] `method_runs` — executes end-to-end without errors
