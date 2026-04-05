@@ -1,0 +1,108 @@
+{
+  "paper": {
+    "arxiv_id": "2505.01353",
+    "title": "Differentiable Nonlinear Model Predictive Control",
+    "date": "",
+    "topics": [
+      "paper-type-metric-method",
+      "domain-ai-ml",
+      "area-rl",
+      "category-optimization",
+      "method-differentiable-mpc",
+      "secondary-domain-systems",
+      "secondary-area-control-theory",
+      "secondary-category-efficiency",
+      "secondary-method-sensitivity-analysis",
+      "selection-category-scientific-inference-optimization"
+    ]
+  },
+  "reproduction": {
+    "milestone": "core_claim",
+    "status": "done",
+    "error": null,
+    "scaffold": "claude-code",
+    "model": "MiniMax-M2.7",
+    "profile": "minimax-medium",
+    "effort": "medium",
+    "gpu_hours_used": 0.0,
+    "current_iteration_gpu_budget": 80,
+    "current_iteration_gpu_hours_used": 0.0,
+    "total_gpu_hours_used": 0.0,
+    "gpu_budget": 80,
+    "duration_sec": 529.5,
+    "cost_usd": 9.338,
+    "input_tokens": 1570656,
+    "output_tokens": 7324,
+    "cached_input_tokens": 1479041,
+    "cache_creation_tokens": 89876,
+    "reasoning_tokens": null,
+    "total_input_tokens": 3139573,
+    "num_turns": 35,
+    "duration_api_ms": 425977,
+    "num_runs": 1,
+    "iteration_count": 0,
+    "workflow": "standard",
+    "workflow_step": 0,
+    "total_gpu_jobs": 0,
+    "time_breakdown": {
+      "working": 260.6750431060791,
+      "done": 6.421772003173828,
+      "wrapping_up": 258.67787504196167
+    }
+  },
+  "agents": [
+    {
+      "scaffold": "claude-code",
+      "model": "MiniMax-M2.7",
+      "profile": "minimax-medium",
+      "effort": "medium",
+      "role": "reproducer",
+      "is_iteration": false,
+      "iteration": 1,
+      "workflow": "standard",
+      "workflow_step": 0,
+      "started_at": 1775359639.3087852,
+      "finished_at": 1775360168.8234365,
+      "status": "done",
+      "error": null,
+      "milestone": "core_claim",
+      "gpu_budget": 80,
+      "gpu_hours_used": 0.0,
+      "total_gpu_hours_used": 0.0,
+      "time_breakdown": {
+        "working": 260.6750431060791,
+        "done": 6.421772003173828,
+        "wrapping_up": 258.67787504196167
+      },
+      "cost_usd": 9.3376255,
+      "input_tokens": 1570656,
+      "output_tokens": 7324,
+      "cached_input_tokens": 1479041,
+      "cache_creation_tokens": 89876,
+      "reasoning_tokens": null,
+      "total_input_tokens": 3139573,
+      "num_turns": 35,
+      "duration_api_ms": 425977,
+      "tool_uses": {
+        "Bash": 9,
+        "Read": 13,
+        "Edit": 5,
+        "Write": 5,
+        "TodoWrite": 1
+      },
+      "gpu_jobs": [],
+      "progress_log": "### [2026-04-04 06:26] - method_runs\n- Read the paper thoroughly (2505.01353 - Differentiable Nonlinear Model Predictive Control)\n- Filled in all briefing files (problem.md, method.md, evaluation.md, overview.md)\n- Created reference.json with paper's 3 main experiments (bounded LQR x2, pendulum sensitivity)\n- Cloned acados repository into method/acados\n- Studied acados examples: pendulum OCP sensitivities, chain of masses, LQR benchmark\n- Implemented pendulum_sensitivity.py (Section 5.1 - core claim)\n- Implemented lqr_benchmark.py (Section 5.2)\n- Implemented chain_sensitivity.py (Section 5.3)\n- Wrote eval/evaluator.py for evaluation\n- Set up environment: container.def (CUDA base + build tools), setup.sh (Python deps)\n- Wrote all scripts: download.sh, method.sh, reproduce.sh, baseline.sh, evaluate.sh, run.sh\n- Submitted job to build acados and run experiments\n\n### [2026-04-05] - core_claim\n- Built acados from source with HPIPM, BLASFEO, qpOASES\n- Fixed EXACT Hessian convergence failure via GN warm-start\n- Fixed EXACT adjoint sensitivity API (seed_x/seed_u as (stage, ndarray) tuples)\n- Enabled with_sens=True on GN solver to compute GN adjoint sensitivities\n- Used eps=1e-5 for FD sensitivity sweep to get accurate results\n- Results: EXACT error=0.0036 (paper: 0.01), GN error=12.44 (paper: 10.0)\n- Core claim validated: exact Hessian gives correct parametric sensitivities"
+    }
+  ],
+  "components": {
+    "has_container": true,
+    "has_method_code": true,
+    "has_evaluation": true,
+    "has_download_script": true,
+    "has_reproduce_script": true,
+    "has_method_script": true,
+    "has_baseline": true,
+    "has_reference": true,
+    "has_data": true
+  }
+}
