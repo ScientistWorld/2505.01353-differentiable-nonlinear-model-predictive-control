@@ -25,9 +25,8 @@ else
     cd "${ACADOS_DIR}"
 fi
 
-# Download t_renderer binaries
-TERA_DIR="${ACADOS_DIR}/bin/t_renderer"
-mkdir -p "${TERA_DIR}"
+# Download t_renderer binary
+mkdir -p "${ACADOS_DIR}/bin"
 ARCH=$(uname -m)
 case "${ARCH}" in
     x86_64) TERA_ARCH="linux64" ;;
@@ -35,10 +34,10 @@ case "${ARCH}" in
     *) echo "Unknown architecture: ${ARCH}"; exit 1 ;;
 esac
 TERA_URL="https://github.com/acados/tera_renderer/releases/download/v0.0.41/t_renderer_${TERA_ARCH}"
-if [ ! -f "${TERA_DIR}/t_renderer" ]; then
+if [ ! -f "${ACADOS_DIR}/bin/t_renderer" ]; then
     echo "Downloading t_renderer..."
-    curl -sSL "${TERA_URL}" -o "${TERA_DIR}/t_renderer"
-    chmod +x "${TERA_DIR}/t_renderer"
+    curl -sSL "${TERA_URL}" -o "${ACADOS_DIR}/bin/t_renderer"
+    chmod +x "${ACADOS_DIR}/bin/t_renderer"
     echo "t_renderer installed"
 else
     echo "t_renderer already present"
@@ -59,16 +58,7 @@ make install -j$(nproc)
 echo "acados build complete."
 echo "Library: ${ACADOS_DIR}/lib/"
 ls -la ${ACADOS_DIR}/lib/
-
-# Install Python packages
-echo "Installing Python packages..."
-pip3 install numpy scipy matplotlib casadi || pip install numpy scipy matplotlib casadi
-
-# Install acados_template
-echo "Installing acados_template..."
-cd "${ACADOS_DIR}/interfaces/acados_template"
-pip3 install -e . || pip install -e .
-cd /home/user
+echo "Python dependencies are installed separately via environment/setup.sh."
 
 echo ""
 echo "=== Download + Build Complete ==="

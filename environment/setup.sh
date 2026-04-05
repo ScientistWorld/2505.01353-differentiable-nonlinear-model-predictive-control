@@ -7,7 +7,7 @@
 set -e
 
 # Install scientific Python packages
-uv pip install --system numpy scipy matplotlib
+uv pip install --system numpy scipy matplotlib pillow
 
 # Install casadi (required for acados OCP formulation)
 uv pip install --system casadi
