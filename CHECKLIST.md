@@ -11,10 +11,10 @@ Check off items as you complete them. Order doesn't matter — work however make
 ## Scoring
 - [x] `scoring/reference.json` — paper's reported numbers
 - [x] Workspace validated via `python validate.py`
-- [ ] `scoring/scores.json` — reproduced numbers (must match reference.json experiment/metric structure)
-- [ ] `scoring/TARGETS.md` — primary, constraint, and ablation targets (do not edit until wrap up)
-- [ ] `scoring/CONSTRAINTS.md` — what a scientist must hold fixed (do not edit until wrap up)
-- [ ] `scoring/DIRECTION.md` — research direction scope for scientist (do not edit until wrap up)
+- [x] `scoring/scores.json` — reproduced numbers (must match reference.json experiment/metric structure)
+- [x] `scoring/TARGETS.md` — primary, constraint, and ablation targets (do not edit until wrap up)
+- [x] `scoring/CONSTRAINTS.md` — what a scientist must hold fixed (do not edit until wrap up)
+- [x] `scoring/DIRECTION.md` — research direction scope for scientist (do not edit until wrap up)
 
 ## Code
 - [x] Evaluation code in `eval/`
@@ -35,8 +35,8 @@ Check off items as you complete them. Order doesn't matter — work however make
 - [ ] Pretrained models downloaded if needed — N/A
 
 ## Milestones
-- [ ] `method_runs` — executes end-to-end without errors
-- [ ] `core_claim` — minimum experiment supports central claim
+- [x] `method_runs` — executes end-to-end without errors
+- [x] `core_claim` — minimum experiment supports central claim
 - [ ] `core_claim_plus` — additional settings
 - [ ] `secondary_claims`
 - [ ] `majority`

@@ -1,50 +1,28 @@
 # Evaluation Targets
 
-<!-- Do not edit this unless you decide to stop -->
+## Primary: pendulum_sensitivity_accuracy
+How accurately does the solver compute parametric sensitivities (du/dtheta) of the optimal control solution?
 
-<!--
-Describe what a scientist could optimize and how to measure it.
+- **Metric**: sensitivity_max_error (lower is better) — max absolute error between adjoint sensitivity and finite-difference ground truth
+- **How to run**: `scripts/evaluate.sh` or `python3 eval/evaluator.py` → runs `run_pendulum_eval()`
 
-If a paper claims "we get X without sacrificing Y." Your targets must
-capture BOTH sides. Without constraint targets, a scientist can trivially
-"improve" by breaking the property the paper was designed to satisfy.
+### What it tests
+The pendulum OCP (N=20, cart-pole system) with parametric cost weight theta. Measures how well the solver's parametric sensitivity computation matches ground-truth finite differences. This is the paper's core claim: exact Hessian gives accurate sensitivities while Gauss-Newton approximation gives wrong results.
 
-Three kinds of targets:
+## Primary: bounded_lqr_umax_high
+How fast can the solver compute optimal controls and parametric sensitivities for bounded LQR problems with loose control limits?
 
-  PRIMARY    — the main thing the paper optimizes (accuracy, PSNR, etc.)
-  CONSTRAINT — what the paper must maintain (security, fairness, param count,
-               baseline comparison). Constraint metrics guard against cheating:
-               a scientist who ignores the constraint should score WORSE.
-  ABLATION   — what breaks when the key idea is removed (wrong-key test,
-               no-module test). Proves the method actually does something. 
-               This can be ignored if truly not important.
+- **Metric**: solve_and_sens_time_ms (lower is better) — wall-clock time to solve n_batch problems with adjoint sensitivities
+- **How to run**: `scripts/evaluate.sh` or `python3 eval/evaluator.py` → runs `run_lqr_eval()`
 
-For each target, write:
-- What the experiment tests (one sentence)
-- The primary metric and direction (higher/lower is better)
-- How to run evaluation
+### What it tests
+Bounded LQR OCP (N=20, nx=8, nu=4, u_max=10^4). Measures solve + sensitivity time. From paper's Table 1.
 
-Every target here MUST appear in both reference.json and scores.json.
-Do not list targets you cannot measure — phantom targets are worse than
-missing targets.
+## Primary: bounded_lqr_umax_low
+How fast can the solver compute optimal controls and parametric sensitivities for bounded LQR problems with tight control limits?
 
-Example for a steganography paper:
+- **Metric**: solve_and_sens_time_ms (lower is better) — wall-clock time to solve n_batch problems with adjoint sensitivities
+- **How to run**: `scripts/evaluate.sh` or `python3 eval/evaluator.py` → runs `run_lqr_eval()`
 
-## Primary: reconstruction_quality
-Cover and hidden scene PSNR on Blender Synthetic.
-- **Metric**: psnr (higher is better)
-
-## Constraint: key_security
-Wrong-key rendering must produce incoherent output.
-- **Metric**: wrong_key_psnr (lower is better — high means security is broken)
-
-## Ablation: vs_standalone_baseline
-Cover quality should match standalone model (no hidden scene embedded).
-- **Metric**: psnr_gap (lower is better — large gap means hiding costs quality)
-
-Delete this comment block and fill in your actual targets below.
--->
-
-<!-- This is high-level. IT IS ABOUT CONCEPT, NOT NUMBERS. DO NOT INCLUDE ANY ACTUAL VALUES FROM THE PAPER OR YOUR EXPERIMENTS HERE. -->
-
-<!-- This should EXACTLY corresponds to the structure in your scores.json. -->
+### What it tests
+Bounded LQR OCP (N=20, nx=8, nu=4, u_max=1.0). Measures solve + sensitivity time with tight control limits. From paper's Table 1. Note: mpc.pytorch fails to converge consistently in this setting.
