@@ -198,6 +198,10 @@ Key reference timings (acados):
 
 </details>
 
+### Iteration 2: glm-5.1
+- **Milestone**: `core_claim` | **Status**: done
+- **Working time**: 3m | **GPU**: 0.0h
+
 
 ---
 

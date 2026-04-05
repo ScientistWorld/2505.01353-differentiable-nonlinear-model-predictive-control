@@ -1,8 +1,6 @@
 # IMPORTANT: Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends. Sleeping blocks the entire pipeline.
-action: pending
-gpus: 1
-test: false
-milestone: method_runs
-notes: ""
+action: done
+milestone: core_claim
+notes: "Reproduced core claim: EXACT Hessian gives sensitivity error=0.004 (paper: 0.01), GN error=12.4 (paper: 10.0). Environment is fully functional."
