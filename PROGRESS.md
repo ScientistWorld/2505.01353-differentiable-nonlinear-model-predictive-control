@@ -37,19 +37,22 @@
 
 ## Remaining
 
-- LQR timing: enable OpenMP in the acados build to reduce the remaining high-`u_max` runtime gap.
+- LQR timing: validate the corrected Section 5.2 benchmark on a fresh Release rebuild inside the job environment.
+- OpenMP remains optional; the larger known issue was incorrect timing accounting rather than thread-level parallelism.
 - Secondary claims: the Section 5.3 chain benchmark is not yet part of the authoritative evaluation path.
 
 ## Issues
 
 - LQR timing varies noticeably across reruns, so the current timing benchmark is less stable than the pendulum sensitivity result
+- A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
 - Temporary generated files appear when acados regenerates C code during evaluation
 
 ## Deviations from Paper
 
 - The packaged pendulum evaluator is a smaller but faithful version of the paper's setup: `N=20`, `T=1.0`, and sensitivity is checked at a central reference parameter using finite differences around that point rather than across the full paper-scale trajectory map.
-- The packaged LQR timing benchmark uses `n_batch=32` rather than the paper's `n_batch=128`, so timing values should be interpreted as a reduced-scale benchmark.
-- acados compiled without OpenMP (missing -DACADOS_WITH_OPENMP=ON), affects timing
+- The Section 5.2 benchmark code has now been updated back to the paper's `n_batch=128`; validation of the corrected benchmark is pending the next submitted job.
+- The LQR evaluator previously double-counted solve time when reporting "solution + adjoint sensitivity" timing; this has been corrected and needs fresh benchmark results.
+- acados is rebuilt in `Release` mode on the job path for the next validation run.
 - No comparison against mpc.pytorch or cvxpygen baselines
 - Chain of masses example (Section 5.3) not included in evaluator

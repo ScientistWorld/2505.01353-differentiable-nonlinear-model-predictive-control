@@ -18,6 +18,11 @@
 - Re-ran `scripts/evaluate.sh` standalone during the audit and reproduced the same core pendulum result: exact `0.002597`, Gauss-Newton `2.200135`.
 - Corrected packaging overstatements so the docs now describe the reduced-scale runnable evaluator rather than the full paper-scale settings.
 
+### [2026-04-05 05:33] - core_claim
+- Corrected the Section 5.2 bounded-LQR evaluator to stop double-counting solve time in the reported "solution + adjoint sensitivity" metric.
+- Restored the benchmark batch size to `n_batch=128` to match the paper's Table 1 setup more closely.
+- Updated the job path to rebuild acados in `Release` mode before evaluation and prepared a fresh submission to validate the corrected benchmark.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified from a fresh run in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse.

@@ -321,7 +321,7 @@ def run_lqr_eval():
     ca, AcadosModel, AcadosOcp, AcadosOcpSolver = _import_acados()
 
     nx, nu, n_horizon = 8, 4, 20
-    n_batch = 32
+    n_batch = 128
     n_theta_dim = nx * nx + nx * nu + nx + (nx + nu) * (nx + nu)
 
     np.random.seed(42)
@@ -371,22 +371,16 @@ def run_lqr_eval():
         ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
         ocp.solver_options.hessian_approx = "EXACT"
         ocp.solver_options.qp_solver_cond_N = n_horizon
-        ocp.solver_options.qp_solver_ric_alg = 0
-        ocp.solver_options.qp_solver_cond_ric_alg = 0
         ocp.solver_options.with_solution_sens_wrt_params = True
         ocp.solver_options.nlp_solver_max_iter = 50
         ocp.solver_options.tol = 1e-6
 
         solver = AcadosOcpSolver(ocp, json_file=f"eval_lqr_{label}.json")
 
-        t_start = time.time()
-        for x0 in x0_batch:
-            solver.reset()
-            solver.set(0, "x", x0)
-            solver.solve()
-        nominal_time_s = time.time() - t_start
-
-        t_start = time.time()
+        # Measure the paper's "solution + adjoint sensitivities" path directly.
+        # Keep the runtime x0 update on the generated solver interface that is
+        # already used successfully in this workspace.
+        t_start = time.perf_counter()
         for x0 in x0_batch:
             solver.reset()
             solver.set(0, "x", x0)
@@ -398,7 +392,7 @@ def run_lqr_eval():
                 with_respect_to="p_global",
                 sanity_checks=False,
             )
-        solve_and_sens_time_ms = 1000.0 * (nominal_time_s + (time.time() - t_start))
+        solve_and_sens_time_ms = 1000.0 * (time.perf_counter() - t_start)
 
         results[f"lqr_umax_{label}"] = {
             "solve_and_sens_time_ms": float(solve_and_sens_time_ms),
