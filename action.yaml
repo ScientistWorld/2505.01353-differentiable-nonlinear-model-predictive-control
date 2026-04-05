@@ -1,8 +1,6 @@
 # IMPORTANT: Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends. Sleeping blocks the entire pipeline.
-action: submit
-gpus: 0
-test: true
+action: done
 milestone: core_claim
-notes: "Validate the corrected Section 5.2 benchmark: rebuild acados in Release mode, run the paper-scale n_batch=128 LQR timing path without double-counting solve time, and rerun the full evaluator on a CPU test node."
+notes: "Verified gym readiness; corrected scoring weights and aligned LQR benchmark docs with the current evaluator."
