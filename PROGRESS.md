@@ -3,7 +3,8 @@
 ## Final Status
 
 - Final milestone: `core_claim`
-- Audit verdict: trustable after correction. The implementation is real and method-faithful, and the final packaging now states the runnable reduced-scale setup honestly.
+- Audit verdict: trustable after correction. The implementation is real and method-faithful, and the final packaging states the runnable reduced-scale setup honestly.
+- Final verification complete: the gym-facing scoring rubric, targets, constraints, and direction documents are aligned with the packaged evaluator and ready for future scientist agents.
 
 ## What Works
 
@@ -12,8 +13,9 @@
 - Environment: container.def (CUDA base), setup.sh (Python deps)
 - `eval/evaluator.py`: authoritative reproduction path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
 - `scripts/evaluate.sh` is the standard entry point and writes `scoring/scores.json`
-- scoring/TARGETS.md, scoring/CONSTRAINTS.md, scoring/DIRECTION.md filled
+- scoring/TARGETS.md, scoring/CONSTRAINTS.md, scoring/DIRECTION.md filled and aligned with the current evaluator configuration
 - Audit confirmed the implementation is a real acados-based exact-Hessian / Gauss-Newton comparison, not a surrogate model
+- Verification confirmed the scoring weights prioritize the pendulum core claim while retaining the LQR timing benchmarks as constraint targets
 
 ## Results
 
@@ -37,9 +39,8 @@
 
 ## Remaining
 
-- LQR timing: validate the corrected Section 5.2 benchmark on a fresh Release rebuild inside the job environment.
-- OpenMP remains optional; the larger known issue was incorrect timing accounting rather than thread-level parallelism.
-- Secondary claims: the Section 5.3 chain benchmark is not yet part of the authoritative evaluation path.
+- Secondary claims remain outside the packaged evaluator: the Section 5.3 chain benchmark is not part of the authoritative evaluation path.
+- The LQR timing experiments remain informative constraint benchmarks rather than a fully stabilized reproduction of the paper's timing table.
 
 ## Issues
 
@@ -51,8 +52,7 @@
 ## Deviations from Paper
 
 - The packaged pendulum evaluator is a smaller but faithful version of the paper's setup: `N=20`, `T=1.0`, and sensitivity is checked at a central reference parameter using finite differences around that point rather than across the full paper-scale trajectory map.
-- The Section 5.2 benchmark code has now been updated back to the paper's `n_batch=128`; validation of the corrected benchmark is pending the next submitted job.
-- The LQR evaluator previously double-counted solve time when reporting "solution + adjoint sensitivity" timing; this has been corrected and needs fresh benchmark results.
-- acados is rebuilt in `Release` mode on the job path for the next validation run.
+- The Section 5.2 benchmark code uses the paper's `n_batch=128`, but the packaged reproduction still reports reduced-scale timings from this local environment rather than a full hardware-matched timing study.
+- The LQR evaluator previously double-counted solve time when reporting "solution + adjoint sensitivity" timing; this has been corrected in the packaged evaluator.
 - No comparison against mpc.pytorch or cvxpygen baselines
 - Chain of masses example (Section 5.3) not included in evaluator

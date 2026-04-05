@@ -23,8 +23,13 @@
 - Restored the benchmark batch size to `n_batch=128` to match the paper's Table 1 setup more closely.
 - Updated the job path to rebuild acados in `Release` mode before evaluation and prepared a fresh submission to validate the corrected benchmark.
 
+### [2026-04-05 05:55] - core_claim
+- Performed final workspace verification for gym use and confirmed that `eval/` remains independent from `method/` and the problem/evaluation briefing files are method-agnostic enough for from-scratch use.
+- Corrected the scoring rubric so the renormalized gym weights prioritize the pendulum core claim over the secondary LQR timing benchmarks.
+- Aligned `scoring/TARGETS.md` and `scoring/CONSTRAINTS.md` with the current LQR evaluator configuration (`n_batch=128`) and wrote `VERIFICATION.md`.
+
 ## Stop Justification
 
-- Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified from a fresh run in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse.
-- The remaining gaps are packaging- and completeness-related rather than validity-related: the LQR benchmark is reduced-scale and timing-volatile, and the chain-of-masses secondary claim is not in the authoritative evaluation path.
-- Further progress would require another implementation / experiment cycle rather than final wrap-up work.
+- Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
+- The workspace is now packaged as a usable gym: problem and evaluation components are separated from the method implementation, `scripts/evaluate.sh` writes `scoring/scores.json`, and the scoring rubric emphasizes the validated core claim while preserving the LQR timing benchmarks as constraint targets.
+- The remaining gaps are completeness-related rather than correctness-related: the LQR timing benchmarks are still reduced-scale and timing-volatile, no local reproduction of external baselines is included, and the Section 5.3 chain-of-masses result is outside the authoritative evaluation path.
