@@ -60,12 +60,16 @@
 - 2026-04-10 setup failure: `uv pip install --system` triggered a root-mapped fakeroot IPC error after package resolution. The workaround is to use `python3 -m pip install` in `environment/setup.sh` for this environment.
 - 2026-04-10 setup failure 2: the setup phase does not reliably expose `/home/user/method/acados`, so `environment/setup.sh` must not `cd` into the acados source tree. The runtime scripts import the acados Python interface directly from source via `PYTHONPATH`.
 - 2026-04-10 runtime failure: CPU smoke-test job `07c40127-2b3` passed setup and rebuilt acados, then failed because `casadi` imported as an incomplete namespace module without `MX`/`SX`. Updated `environment/setup.sh` to force-reinstall pinned runtime wheels and validate the required CasADi symbols during setup.
+- 2026-04-10 runtime import hardening: traced the remaining failure path to a shadowed namespace-only `casadi` import on the compute container's Python 3.10 runtime. Added `method/bootstrap_runtime.py` so the authoritative method path repairs CasADi imports by preferring real package roots with `casadi/__init__.py`, and updated `scripts/run.sh` to use the same repair logic in a preflight before the expensive rebuild/method path.
 - 2026-04-10 runtime import hardening: the compute payload for job `07c40127-2b3` still resolved a broken namespace-style `casadi` at runtime even though setup validation passed. Hardened `scripts/run.sh`, `scripts/reproduce.sh`, `scripts/method.sh`, and `scripts/evaluate.sh` to set `PYTHONNOUSERSITE=1`, emit runtime import diagnostics, and prepend the unpacked Python 3.10 CasADi wheel in `environment/vendor_py310/` when present.
+- 2026-04-10 vendored runtime path: extended the fallback from CasADi-only to the full Python runtime dependency set (`casadi`, `numpy`, `scipy`, `deprecated`) by unpacking CPython 3.10 wheels into `environment/vendor_py310/` and prepending all unpacked wheel roots in the runnable scripts. Simplified `environment/setup.sh` to a no-op so jobs no longer depend on overlay-time pip state.
 
 ## Pending Job
 
 - 2026-04-10 18:50 UTC: resubmitting CPU test job after fixing the incomplete CasADi import observed in job `07c40127-2b3`. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
+- 2026-04-10 22:38 UTC: resubmitting CPU test job after adding runtime CasADi import repair plus a logged preflight in `scripts/run.sh`. Local namespace-shadowing tests, shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
 - 2026-04-10 22:56 UTC: resubmitting CPU test job after adding runtime import hardening for CasADi. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
+- 2026-04-10 23:02 UTC: resubmitting CPU test job after switching to a fully vendored Python 3.10 runtime path and making `environment/setup.sh` a no-op. Local shell syntax checks, bootstrap CasADi import, and `python3 validate.py --compare` pass before submission.
 
 ## Deviations from Paper
 

@@ -1,8 +1,10 @@
 #!/bin/bash
 # Download and build acados from source on the login node (internet available).
 #
-# Estimated total download size: ~50 MB (git clone + submodules)
-# Estimated disk usage after build: ~2 GB
+# Estimated total download size: ~200 MB
+#   - acados checkout + renderer: ~50 MB
+#   - vendored CPython 3.10 wheels (casadi/numpy/scipy/etc.): ~130 MB
+# Estimated disk usage after build/unpack: ~2.3 GB
 #
 # Run on a node with internet access BEFORE building the container
 # or submitting compute jobs. MUST be run here (login node) because
@@ -69,7 +71,40 @@ make install -j$(nproc)
 echo "acados build complete."
 echo "Library: ${ACADOS_DIR}/lib/"
 ls -la ${ACADOS_DIR}/lib/
-echo "Python dependencies are installed separately via environment/setup.sh."
+echo "Preparing vendored Python 3.10 runtime dependencies..."
+
+mkdir -p /home/user/environment/vendor_wheels /home/user/environment/vendor_py310 /home/user/tmp/pip-tmp
+TMPDIR=/home/user/tmp/pip-tmp python3 -m pip download \
+    --only-binary=:all: \
+    --platform manylinux2014_x86_64 \
+    --python-version 310 \
+    --implementation cp \
+    --abi cp310 \
+    --dest /home/user/environment/vendor_wheels \
+    "casadi==3.7.2" \
+    "numpy<2.3" \
+    "scipy<1.16" \
+    "deprecated<2"
+
+python3 - <<'PY'
+import glob
+import os
+import shutil
+import zipfile
+
+wheel_dir = "/home/user/environment/vendor_wheels"
+out_dir = "/home/user/environment/vendor_py310"
+os.makedirs(out_dir, exist_ok=True)
+
+for wheel_path in sorted(glob.glob(os.path.join(wheel_dir, "*.whl"))):
+    target = os.path.join(out_dir, os.path.basename(wheel_path)[:-4])
+    if os.path.isdir(target):
+        shutil.rmtree(target)
+    os.makedirs(target, exist_ok=True)
+    with zipfile.ZipFile(wheel_path) as zf:
+        zf.extractall(target)
+    print(f"Extracted {os.path.basename(wheel_path)} -> {target}")
+PY
 
 echo ""
 echo "=== Download + Build Complete ==="

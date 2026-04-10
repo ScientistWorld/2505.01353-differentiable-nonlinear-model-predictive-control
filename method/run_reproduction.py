@@ -10,6 +10,8 @@ import time
 
 import numpy as np
 
+from bootstrap_runtime import ensure_casadi_importable
+
 
 def _import_acados():
     """Lazily import acados after configuring Python and library paths."""
@@ -21,7 +23,7 @@ def _import_acados():
         os.environ["LD_LIBRARY_PATH"] = (
             f"{lib_path}:{ld_library_path}" if ld_library_path else lib_path
         )
-    import casadi as ca
+    ca = ensure_casadi_importable()
     from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 
     return ca, AcadosModel, AcadosOcp, AcadosOcpSolver

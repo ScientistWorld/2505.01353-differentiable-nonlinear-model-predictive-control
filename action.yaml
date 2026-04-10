@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "Retry CPU smoke test after job 07c40127-2b3 failed at runtime on a namespace-style casadi import. scripts/run.sh, reproduce.sh, method.sh, and evaluate.sh now set PYTHONNOUSERSITE=1, print casadi import diagnostics, and prepend the unpacked Python 3.10 CasADi wheel in environment/vendor_py310 as a fallback. Local shell syntax checks, py_compile, and validate.py --compare passed at 2026-04-10 22:56 UTC."
+notes: "CPU smoke test for the fully vendored runtime path after completed job 07c40127-2b3 failed on a namespace-style casadi import. scripts/download.sh now materializes CPython 3.10 wheels into environment/vendor_py310, runnable scripts prepend all vendored dependency roots, and environment/setup.sh is a no-op. Local shell syntax checks, bootstrap CasADi import, and validate.py --compare passed at 2026-04-10 23:02 UTC."
