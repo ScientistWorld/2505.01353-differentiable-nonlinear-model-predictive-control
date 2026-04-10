@@ -3,6 +3,7 @@
 ## Final Status
 
 - Final milestone: `core_claim`
+- 2026-04-10 verification: `python3 validate.py --compare` passed, with reproduced pendulum exact-Hessian error `0.002597` and Gauss-Newton error `2.200135`.
 - Audit verdict: trustable after correction. The implementation is real and method-faithful, and the final packaging states the runnable reduced-scale setup honestly.
 - Final verification complete: the gym-facing scoring rubric, targets, constraints, and direction documents are aligned with the packaged evaluator and ready for future scientist agents.
 

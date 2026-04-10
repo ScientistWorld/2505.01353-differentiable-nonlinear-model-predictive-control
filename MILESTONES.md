@@ -28,6 +28,11 @@
 - Corrected the scoring rubric so the renormalized gym weights prioritize the pendulum core claim over the secondary LQR timing benchmarks.
 - Aligned `scoring/TARGETS.md` and `scoring/CONSTRAINTS.md` with the current LQR evaluator configuration (`n_batch=128`) and wrote `VERIFICATION.md`.
 
+### [2026-04-10 01:16] - core_claim
+- Re-validated the packaged workspace with `python3 validate.py --compare`; all checks passed.
+- Confirmed tracked reproduction deliverables are already pushed to `origin/main`; remaining dirty paths are system/trajectory artifacts outside the method/evaluation package.
+- Left `action.yaml` at `done` with milestone `core_claim`.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

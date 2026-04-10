@@ -3,4 +3,4 @@
 # only after your turn ends. Sleeping blocks the entire pipeline.
 action: done
 milestone: core_claim
-notes: "Verified gym readiness; corrected scoring weights and aligned LQR benchmark docs with the current evaluator."
+notes: "Re-validated packaged core-claim reproduction with python3 validate.py --compare; all checks passed."
