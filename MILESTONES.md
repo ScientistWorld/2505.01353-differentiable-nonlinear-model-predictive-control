@@ -68,6 +68,11 @@
 - The current setup script only installs PyPI packages; runtime scripts import acados_template from source via `PYTHONPATH`.
 - Local shell syntax checks, Python compilation, acados_template source import, and `python3 validate.py --compare` pass. Resubmitting the CPU smoke test.
 
+### [2026-04-10 18:50] - core_claim
+- CPU smoke-test job `07c40127-2b3` passed setup and rebuilt acados, then failed in the method payload because Python imported an incomplete namespace-only `casadi` module without `MX`/`SX`.
+- Updated `environment/setup.sh` to force-reinstall pinned runtime wheels and validate that `casadi.MX`, `casadi.SX`, and `casadi.Function` are available during setup.
+- Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass. Resubmitting the CPU smoke test.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

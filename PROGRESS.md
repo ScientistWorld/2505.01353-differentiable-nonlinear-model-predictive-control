@@ -59,10 +59,11 @@
 - 2026-04-10 dependency audit found that `method/acados` was recorded as a gitlink without a `.gitmodules` entry. Added the mapping and made `scripts/download.sh` avoid invoking git update commands on a pre-populated acados directory that has no nested `.git`.
 - 2026-04-10 setup failure: `uv pip install --system` triggered a root-mapped fakeroot IPC error after package resolution. The workaround is to use `python3 -m pip install` in `environment/setup.sh` for this environment.
 - 2026-04-10 setup failure 2: the setup phase does not reliably expose `/home/user/method/acados`, so `environment/setup.sh` must not `cd` into the acados source tree. The runtime scripts import the acados Python interface directly from source via `PYTHONPATH`.
+- 2026-04-10 runtime failure: CPU smoke-test job `07c40127-2b3` passed setup and rebuilt acados, then failed because `casadi` imported as an incomplete namespace module without `MX`/`SX`. Updated `environment/setup.sh` to force-reinstall pinned runtime wheels and validate the required CasADi symbols during setup.
 
 ## Pending Job
 
-- 2026-04-10 18:09 UTC: resubmitting CPU test job after confirming the previous setup log came from the older workspace-dependent `setup.sh`. The current setup script no longer changes into `/home/user/method/acados`; local shell syntax checks, acados_template source import, Python compilation, and `python3 validate.py --compare` pass before submission.
+- 2026-04-10 18:50 UTC: resubmitting CPU test job after fixing the incomplete CasADi import observed in job `07c40127-2b3`. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
 
 ## Deviations from Paper
 
