@@ -60,7 +60,7 @@
 
 ## Pending Job
 
-- Resubmitting CPU test job to run the corrected `scripts/run.sh` path, which rebuilds acados in Release mode and then runs `scripts/reproduce.sh`.
+- 2026-04-10 16:03 UTC: resubmitting CPU test job to run the corrected `scripts/run.sh` path, which rebuilds acados in Release mode and then runs `scripts/reproduce.sh`. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
 
 ## Deviations from Paper
 

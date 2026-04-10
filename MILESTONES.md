@@ -53,6 +53,11 @@
 - Replaced `uv pip install --system` in `environment/setup.sh` with `python3 -m pip install` for this workspace's setup phase while keeping Python installs out of `container.def`.
 - Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass after the setup change. Resubmitting the same CPU smoke test.
 
+### [2026-04-10 16:03] - core_claim
+- Rechecked the packaged method/evaluation split after reactivation: `method/run_reproduction.py` contains the acados exact-Hessian and Gauss-Newton sensitivity computation, while `eval/evaluator.py` only scores a method-produced JSON artifact.
+- Local checks pass: shell syntax validation, Python compilation, and `python3 validate.py --compare`.
+- Submitting a CPU smoke test to verify the full `scripts/run.sh` -> `scripts/reproduce.sh` -> `scripts/evaluate.sh` path inside the compute container after the setup workaround.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
