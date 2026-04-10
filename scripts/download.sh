@@ -14,14 +14,24 @@ cd /home/user
 
 ACADOS_DIR="/home/user/method/acados"
 
-# Check if acados is already cloned
-if [ -d "${ACADOS_DIR}" ]; then
-    echo "acados already cloned, updating submodules..."
+# Check if acados is already available. Some benchmark workspaces contain a
+# pre-populated source tree without a nested .git directory, so only run git
+# update commands when the directory is an actual checkout/submodule.
+if [ -d "${ACADOS_DIR}/.git" ] || [ -f "${ACADOS_DIR}/.git" ]; then
+    echo "acados checkout already present, updating submodules..."
     cd "${ACADOS_DIR}"
     git submodule update --recursive --init
+elif [ -f "${ACADOS_DIR}/CMakeLists.txt" ]; then
+    echo "Using existing acados source tree at ${ACADOS_DIR}"
+    cd "${ACADOS_DIR}"
 else
-    echo "Cloning acados repository with submodules..."
-    git clone --recursive https://github.com/acados/acados.git "${ACADOS_DIR}"
+    echo "Initializing acados submodule..."
+    git submodule sync -- method/acados || true
+    git submodule update --init --recursive method/acados || {
+        echo "Submodule init failed; cloning acados repository directly..."
+        rm -rf "${ACADOS_DIR}"
+        git clone --recursive https://github.com/acados/acados.git "${ACADOS_DIR}"
+    }
     cd "${ACADOS_DIR}"
 fi
 

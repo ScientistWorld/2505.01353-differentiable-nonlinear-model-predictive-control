@@ -4,6 +4,7 @@
 
 - Final milestone: `core_claim`
 - 2026-04-10 packaging update: corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate raw method metrics with `method/run_reproduction.py` before scoring through the method-agnostic evaluator. `python3 -m py_compile ...` and `python3 validate.py --compare` pass locally; a CPU test job is being submitted to validate the corrected end-to-end path in-container.
+- 2026-04-10 dependency packaging update: added the missing `.gitmodules` entry for `method/acados` and made `scripts/download.sh` robust to both submodule checkouts and the pre-populated acados source tree in this workspace. Shell syntax checks, Python compilation, and `python3 validate.py --compare` pass locally; a CPU smoke test is being submitted.
 - 2026-04-10 verification: `python3 validate.py --compare` passed, with reproduced pendulum exact-Hessian error `0.002597` and Gauss-Newton error `2.200135`.
 - Audit verdict: trustable after correction. The implementation is real and method-faithful, and the final packaging states the runnable reduced-scale setup honestly.
 - Final verification complete: the gym-facing scoring rubric, targets, constraints, and direction documents are aligned with the packaged evaluator and ready for future scientist agents.
@@ -53,10 +54,11 @@
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
 - Temporary generated files appear when acados regenerates C code during evaluation
 - 2026-04-10 packaging audit found that `scripts/evaluate.sh` had been changed to score `checkpoints/reproduction_results.json`, while the script chain did not reliably regenerate that artifact. Fixed the chain so `scripts/method.sh` runs `method/run_reproduction.py`, then `scripts/evaluate.sh` scores the generated artifact.
+- 2026-04-10 dependency audit found that `method/acados` was recorded as a gitlink without a `.gitmodules` entry. Added the mapping and made `scripts/download.sh` avoid invoking git update commands on a pre-populated acados directory that has no nested `.git`.
 
 ## Pending Job
 
-- Submitted CPU test job to run the corrected `scripts/run.sh` path, which rebuilds acados in Release mode and then runs `scripts/reproduce.sh`.
+- Submitting CPU test job to run the corrected `scripts/run.sh` path, which rebuilds acados in Release mode and then runs `scripts/reproduce.sh`.
 
 ## Deviations from Paper
 

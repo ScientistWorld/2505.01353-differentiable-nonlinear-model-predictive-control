@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "CPU smoke test for corrected end-to-end script flow: rebuild acados in Release mode, run scripts/reproduce.sh, and score generated method results."
+notes: "CPU smoke test after packaging fixes: rebuild acados in Release mode, run scripts/reproduce.sh, and score freshly generated method results. Local shell syntax checks and validate.py --compare passed."
