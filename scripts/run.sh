@@ -51,13 +51,20 @@ echo ""
 echo ">>> Verifying runtime Python imports..."
 python3 - <<'PY'
 import sys
+import traceback
 
 sys.path.insert(0, "/home/user/method")
 from bootstrap_runtime import ensure_casadi_importable
 
-casadi = ensure_casadi_importable()
 print(f"python={sys.executable}")
-print(f"sys.path[:8]={sys.path[:8]}")
+print(f"version={sys.version}")
+print(f"sys.path[:12]={sys.path[:12]}")
+try:
+    casadi = ensure_casadi_importable()
+except Exception as exc:
+    print(f"casadi_bootstrap_failed={exc.__class__.__name__}: {exc}")
+    traceback.print_exc()
+    raise
 print(f"casadi_file={getattr(casadi, '__file__', None)}")
 print(
     "casadi_symbols="

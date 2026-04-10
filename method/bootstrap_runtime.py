@@ -6,12 +6,14 @@ from __future__ import annotations
 import glob
 import importlib
 import os
+import traceback
 import sys
 from typing import Iterable
 
 
 def _candidate_roots() -> list[str]:
     roots: list[str] = []
+    py_version = f"python{sys.version_info.major}.{sys.version_info.minor}"
 
     env_roots = [
         os.environ.get("PYTHONUSERBASE"),
@@ -24,8 +26,8 @@ def _candidate_roots() -> list[str]:
             continue
         if root.endswith("/lib"):
             patterns = [
-                os.path.join(root, "python*", "site-packages"),
-                os.path.join(root, "python*", "dist-packages"),
+                os.path.join(root, py_version, "site-packages"),
+                os.path.join(root, py_version, "dist-packages"),
             ]
         else:
             patterns = [root]
@@ -33,6 +35,8 @@ def _candidate_roots() -> list[str]:
             for match in sorted(glob.glob(pattern)):
                 roots.append(match)
 
+    # Respect the currently configured runtime path order first, especially
+    # when the job injects vendored wheel roots through PYTHONPATH.
     for path in sys.path:
         if path:
             roots.append(path)
@@ -66,6 +70,7 @@ def ensure_casadi_importable():
         sys.modules.pop(module_name, None)
 
     tried_roots: list[str] = []
+    failure_messages: list[str] = []
     for root in _iter_casadi_package_roots():
         tried_roots.append(root)
         if root not in sys.path:
@@ -76,15 +81,25 @@ def ensure_casadi_importable():
         importlib.invalidate_caches()
         try:
             casadi = importlib.import_module("casadi")
-        except Exception:
+        except Exception as exc:
             sys.modules.pop("casadi", None)
+            failure_messages.append(
+                f"{root}: {exc.__class__.__name__}: {exc}\n"
+                f"{traceback.format_exc(limit=3)}"
+            )
             continue
         required = ("MX", "SX", "Function")
         if all(hasattr(casadi, name) for name in required):
             return casadi
         sys.modules.pop("casadi", None)
+        failure_messages.append(
+            f"{root}: imported casadi without required symbols {required}"
+        )
 
     raise ImportError(
         "Unable to import a functional CasADi package. "
-        f"Tried roots: {tried_roots}"
+        f"Python={sys.executable} {sys.version}; "
+        f"Tried roots: {tried_roots}; "
+        f"Failures: {failure_messages}; "
+        f"sys.path[:12]={sys.path[:12]}"
     )

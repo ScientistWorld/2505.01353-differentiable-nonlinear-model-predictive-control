@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "CPU smoke test for the fully vendored runtime path after completed job 07c40127-2b3 failed on a namespace-style casadi import. scripts/download.sh now materializes CPython 3.10 wheels into environment/vendor_py310, runnable scripts prepend all vendored dependency roots, and environment/setup.sh is a no-op. Local shell syntax checks, bootstrap CasADi import, and validate.py --compare passed at 2026-04-10 23:02 UTC."
+notes: "CPU smoke test after job f1d36739-10c exposed that the CasADi runtime bootstrap still probed stale python3.12 user-site paths and hid the real import failure. method/bootstrap_runtime.py now restricts discovery to the active interpreter version and reports per-root exceptions; scripts/run.sh also prints python version and sys.path context. Local shell syntax checks, Python compilation, and validate.py --compare passed at 2026-04-10 23:55 UTC."

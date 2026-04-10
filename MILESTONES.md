@@ -83,6 +83,11 @@
 - Updated `scripts/download.sh` to materialize those wheels on the login node and simplified `environment/setup.sh` to a no-op so compute jobs no longer depend on overlay-time pip behavior.
 - Local checks pass: shell syntax, bootstrap CasADi import, and `python3 validate.py --compare`. Submitting another CPU smoke test for the fully vendored runtime path.
 
+### [2026-04-10 23:55] - core_claim
+- CPU smoke-test job `f1d36739-10c` still failed in the runtime preflight, but the failure narrowed to `method/bootstrap_runtime.py`: it kept probing `/home/user/.local/lib/python3.12/site-packages` and then swallowed the real CasADi import exception from the vendored runtime.
+- Patched `method/bootstrap_runtime.py` to restrict autodiscovery to the active interpreter version, preserve the job's `PYTHONPATH` ordering, and report the exact exception and traceback for each attempted CasADi root.
+- Updated `scripts/run.sh` to print `python3` version details, leading `sys.path`, and the detailed bootstrap failure before aborting. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` all pass before the next CPU smoke test.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
