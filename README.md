@@ -252,6 +252,16 @@ Key reference timings (acados):
 - Fixed helper scripts that incorrectly imported experiment functions from `eval/`; the raw acados experiment code now remains in `method/` while `eval/` remains a method-agnostic scorer.
 - Lightweight checks passed locally: Python compilation and `python3 validate.py --compare`. Submitting a CPU test job to validate the corrected end-to-end path inside the compute container.
 
+### [2026-04-10 06:54] - core_claim
+- Added the missing `.gitmodules` mapping for the `method/acados` gitlink so fresh checkouts know how to initialize the paper's acados dependency.
+- Made `scripts/download.sh` handle both a proper acados checkout/submodule and the pre-populated source-tree layout present in this workspace.
+- Re-ran shell syntax checks, Python compilation, and `python3 validate.py --compare`; all passed. Submitting the CPU smoke test with the same `core_claim` milestone.
+
+### [2026-04-10 07:14] - core_claim
+- The first CPU smoke-test submission failed during `environment/setup.sh`, before the job payload ran. The build log showed `uv` resolving packages and then crashing in root-mapped fakeroot semaphore handling.
+- Replaced `uv pip install --system` in `environment/setup.sh` with `python3 -m pip install` for this workspace's setup phase while keeping Python installs out of `container.def`.
+- Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass after the setup change. Resubmitting the same CPU smoke test.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
