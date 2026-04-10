@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "Retry CPU smoke test after fixing setup.sh to avoid cd/pip-installing acados_template from /home/user/method/acados during the setup overlay. Runtime scripts import acados_template from source via PYTHONPATH. Local shell syntax checks, acados_template source import, py_compile, and validate.py --compare passed at 2026-04-10 17:19 UTC."
+notes: "Retry CPU smoke test after confirming setup.sh no longer cd/pip-installs acados_template from /home/user/method/acados during setup. Runtime scripts import acados_template from source via PYTHONPATH. Local shell syntax checks, py_compile, and validate.py --compare passed at 2026-04-10 18:09 UTC."

@@ -62,7 +62,7 @@
 
 ## Pending Job
 
-- 2026-04-10 17:19 UTC: resubmitting CPU test job after removing the workspace-dependent editable acados_template install from `environment/setup.sh`. Local shell syntax checks, acados_template source import, Python compilation, and `python3 validate.py --compare` pass before submission.
+- 2026-04-10 18:09 UTC: resubmitting CPU test job after confirming the previous setup log came from the older workspace-dependent `setup.sh`. The current setup script no longer changes into `/home/user/method/acados`; local shell syntax checks, acados_template source import, Python compilation, and `python3 validate.py --compare` pass before submission.
 
 ## Deviations from Paper
 
