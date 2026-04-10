@@ -10,11 +10,7 @@ set -e
 
 export PIP_ROOT_USER_ACTION=ignore
 
-# Install scientific Python packages and CasADi.
-python3 -m pip install numpy scipy matplotlib pillow casadi
-
-# Install acados_template (Python interface for acados)
-# Note: acados must be built first (in download.sh / run.sh)
-cd /home/user/method/acados/interfaces/acados_template
-python3 -m pip install -e .
-cd /home/user
+# Install only PyPI dependencies here. The setup phase can run before the
+# workspace submodule tree is available, so acados_template is imported from
+# source at runtime via PYTHONPATH in scripts/run.sh and scripts/method.sh.
+python3 -m pip install numpy scipy casadi deprecated

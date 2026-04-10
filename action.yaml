@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "CPU smoke test for the packaged end-to-end path after rechecking method/eval separation and the setup.sh workaround: rebuild acados in Release mode, run scripts/reproduce.sh, and score freshly generated method results. Local shell syntax checks, py_compile, and validate.py --compare passed at 2026-04-10 16:03 UTC."
+notes: "Retry CPU smoke test after fixing setup.sh to avoid cd/pip-installing acados_template from /home/user/method/acados during the setup overlay. Runtime scripts import acados_template from source via PYTHONPATH. Local shell syntax checks, acados_template source import, py_compile, and validate.py --compare passed at 2026-04-10 17:19 UTC."
