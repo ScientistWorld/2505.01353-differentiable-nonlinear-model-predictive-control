@@ -73,6 +73,11 @@
 - Updated `environment/setup.sh` to force-reinstall pinned runtime wheels and validate that `casadi.MX`, `casadi.SX`, and `casadi.Function` are available during setup.
 - Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass. Resubmitting the CPU smoke test.
 
+### [2026-04-10 22:56] - core_claim
+- Hardened the compute runtime against the broken namespace-style `casadi` import seen in job `07c40127-2b3`.
+- Updated `scripts/run.sh`, `scripts/reproduce.sh`, `scripts/method.sh`, and `scripts/evaluate.sh` to set `PYTHONNOUSERSITE=1`, report the resolved `casadi` import path, and use the unpacked Python 3.10 wheel under `environment/vendor_py310/` as a fallback runtime package source.
+- Re-ran local shell syntax checks, Python compilation, and `python3 validate.py --compare`; all passed. Resubmitting the CPU smoke test with the runtime import fix.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

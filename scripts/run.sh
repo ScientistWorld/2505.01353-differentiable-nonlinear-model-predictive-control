@@ -15,13 +15,27 @@ cd /home/user
 
 export ACADOS_SOURCE_DIR=/home/user/method/acados
 export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
+export PYTHONNOUSERSITE=1
 export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
+
+for dep_dir in /home/user/environment/vendor_py310/*; do
+    if [ -d "${dep_dir}" ]; then
+        export PYTHONPATH="${dep_dir}:${PYTHONPATH}"
+    fi
+done
+
+CASADI_VENDOR_DIR="$(find /home/user/environment/vendor_py310 -maxdepth 1 -mindepth 1 -type d -name 'casadi-*' 2>/dev/null | head -n 1)"
+if [ -n "${CASADI_VENDOR_DIR}" ]; then
+    export LD_LIBRARY_PATH="${CASADI_VENDOR_DIR}/casadi:${LD_LIBRARY_PATH}"
+fi
 
 echo "========================================"
 echo "ACADOS DIFFERENTIABLE MPC - EVALUATE"
 echo "========================================"
 echo "ACADOS_SOURCE_DIR=${ACADOS_SOURCE_DIR}"
 echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+echo "PYTHONNOUSERSITE=${PYTHONNOUSERSITE}"
+echo "CASADI_VENDOR_DIR=${CASADI_VENDOR_DIR:-}"
 
 if [ ! -f "${ACADOS_SOURCE_DIR}/lib/libacados.so" ]; then
     echo "ERROR: missing ${ACADOS_SOURCE_DIR}/lib/libacados.so"
@@ -32,6 +46,24 @@ if [ ! -x "${ACADOS_SOURCE_DIR}/bin/t_renderer" ]; then
     echo "ERROR: missing executable ${ACADOS_SOURCE_DIR}/bin/t_renderer"
     exit 1
 fi
+
+echo ""
+echo ">>> Verifying runtime Python imports..."
+python3 - <<'PY'
+import sys
+
+sys.path.insert(0, "/home/user/method")
+from bootstrap_runtime import ensure_casadi_importable
+
+casadi = ensure_casadi_importable()
+print(f"python={sys.executable}")
+print(f"sys.path[:8]={sys.path[:8]}")
+print(f"casadi_file={getattr(casadi, '__file__', None)}")
+print(
+    "casadi_symbols="
+    f"{all(hasattr(casadi, name) for name in ('MX', 'SX', 'Function'))}"
+)
+PY
 
 echo ""
 echo ">>> Rebuilding acados in Release mode..."

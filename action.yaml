@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "Retry CPU smoke test after job 07c40127-2b3 passed setup/acados rebuild but failed on an incomplete casadi import without MX/SX. setup.sh now force-reinstalls pinned runtime wheels and validates CasADi symbols during setup. Local shell syntax checks, py_compile, and validate.py --compare passed at 2026-04-10 18:50 UTC."
+notes: "Retry CPU smoke test after job 07c40127-2b3 failed at runtime on a namespace-style casadi import. scripts/run.sh, reproduce.sh, method.sh, and evaluate.sh now set PYTHONNOUSERSITE=1, print casadi import diagnostics, and prepend the unpacked Python 3.10 CasADi wheel in environment/vendor_py310 as a fallback. Local shell syntax checks, py_compile, and validate.py --compare passed at 2026-04-10 22:56 UTC."
