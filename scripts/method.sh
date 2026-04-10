@@ -14,5 +14,6 @@ export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
 export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
 
 echo "=== Running differentiable NMPC reproduction ==="
+python3 method/run_reproduction.py
 bash scripts/evaluate.sh
 echo "=== Method run complete ==="

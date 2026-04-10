@@ -3,6 +3,7 @@
 ## Final Status
 
 - Final milestone: `core_claim`
+- 2026-04-10 packaging update: corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate raw method metrics with `method/run_reproduction.py` before scoring through the method-agnostic evaluator. `python3 -m py_compile ...` and `python3 validate.py --compare` pass locally; a CPU test job is being submitted to validate the corrected end-to-end path in-container.
 - 2026-04-10 verification: `python3 validate.py --compare` passed, with reproduced pendulum exact-Hessian error `0.002597` and Gauss-Newton error `2.200135`.
 - Audit verdict: trustable after correction. The implementation is real and method-faithful, and the final packaging states the runnable reduced-scale setup honestly.
 - Final verification complete: the gym-facing scoring rubric, targets, constraints, and direction documents are aligned with the packaged evaluator and ready for future scientist agents.
@@ -11,6 +12,7 @@
 
 - acados built from source with HPIPM, BLASFEO, qpOASES
 - All shell scripts functional: download.sh, method.sh, reproduce.sh, baseline.sh, evaluate.sh, run.sh
+- `scripts/reproduce.sh` now runs the acados method producer before calling the reusable evaluator, so a stale `scoring/scores.json` is not the only reproduction path.
 - Environment: container.def (CUDA base), setup.sh (Python deps)
 - `eval/evaluator.py`: authoritative reproduction path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
 - `scripts/evaluate.sh` is the standard entry point and writes `scoring/scores.json`
@@ -49,6 +51,10 @@
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
 - Temporary generated files appear when acados regenerates C code during evaluation
+
+## Pending Job
+
+- Submitted CPU test job to run the corrected `scripts/run.sh` path, which rebuilds acados in Release mode and then runs `scripts/reproduce.sh`.
 
 ## Deviations from Paper
 

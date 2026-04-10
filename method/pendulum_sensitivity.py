@@ -17,9 +17,9 @@ import sys
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(THIS_DIR)
-sys.path.insert(0, os.path.join(ROOT_DIR, "eval"))
+sys.path.insert(0, THIS_DIR)
 
-from evaluator import run_pendulum_eval
+from run_reproduction import run_pendulum_eval
 
 
 def main():

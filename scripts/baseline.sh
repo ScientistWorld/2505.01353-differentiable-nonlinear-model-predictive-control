@@ -19,10 +19,10 @@ mkdir -p baseline
 python3 - <<'PY'
 import json
 import sys
-sys.path.insert(0, "/home/user/eval")
-import evaluator
+sys.path.insert(0, "/home/user/method")
+import run_reproduction
 
-results = evaluator.run_pendulum_eval()
+results = run_reproduction.run_pendulum_eval()
 with open("/home/user/baseline/pendulum_gn_baseline.json", "w", encoding="utf-8") as f:
     json.dump(results, f, indent=2)
 

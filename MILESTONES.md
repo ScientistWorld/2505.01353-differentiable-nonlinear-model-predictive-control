@@ -33,6 +33,11 @@
 - Confirmed tracked reproduction deliverables are already pushed to `origin/main`; remaining dirty paths are system/trajectory artifacts outside the method/evaluation package.
 - Left `action.yaml` at `done` with milestone `core_claim`.
 
+### [2026-04-10 04:54] - core_claim
+- Corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate `checkpoints/reproduction_results.json` with `method/run_reproduction.py` before scoring it via `eval/evaluator.py`.
+- Fixed helper scripts that incorrectly imported experiment functions from `eval/`; the raw acados experiment code now remains in `method/` while `eval/` remains a method-agnostic scorer.
+- Lightweight checks passed locally: Python compilation and `python3 validate.py --compare`. Submitting a CPU test job to validate the corrected end-to-end path inside the compute container.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

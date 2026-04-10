@@ -1,6 +1,8 @@
 # IMPORTANT: Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends. Sleeping blocks the entire pipeline.
-action: done
+action: submit
+gpus: 0
+test: true
 milestone: core_claim
-notes: "Re-validated packaged core-claim reproduction with python3 validate.py --compare; all checks passed."
+notes: "CPU smoke test for corrected end-to-end script flow: rebuild acados in Release mode, run scripts/reproduce.sh, and score generated method results."

@@ -49,8 +49,8 @@ make install -j"$(nproc)"
 cd /home/user
 
 echo ""
-echo ">>> Running evaluation..."
-bash /home/user/scripts/evaluate.sh
+echo ">>> Running reproduction and evaluation..."
+bash /home/user/scripts/reproduce.sh
 
 echo ""
 echo "========================================"
