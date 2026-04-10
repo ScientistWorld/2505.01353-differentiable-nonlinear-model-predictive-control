@@ -73,11 +73,6 @@
 - Updated `environment/setup.sh` to force-reinstall pinned runtime wheels and validate that `casadi.MX`, `casadi.SX`, and `casadi.Function` are available during setup.
 - Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass. Resubmitting the CPU smoke test.
 
-### [2026-04-10 22:38] - core_claim
-- Traced the latest smoke-test failure to a container-side CasADi import shadowing problem: the compute job reached `method/run_reproduction.py`, but `acados_template` saw a namespace-only `casadi` instead of the real wheel.
-- Added `method/bootstrap_runtime.py` and switched `method/run_reproduction.py` to repair CasADi imports by searching concrete site/dist-package roots for a real `casadi/__init__.py` before loading `acados_template`.
-- Hardened `scripts/run.sh` with `PYTHONNOUSERSITE=1` and a Python preflight that logs the resolved CasADi path and symbol availability before rebuilding acados and running the packaged reproduction. Local shadowing tests, shell syntax checks, Python compilation, and `python3 validate.py --compare` pass. Submitting another CPU smoke test.
-
 ### [2026-04-10 22:56] - core_claim
 - Hardened the compute runtime against the broken namespace-style `casadi` import seen in job `07c40127-2b3`.
 - Updated `scripts/run.sh`, `scripts/reproduce.sh`, `scripts/method.sh`, and `scripts/evaluate.sh` to set `PYTHONNOUSERSITE=1`, report the resolved `casadi` import path, and use the unpacked Python 3.10 wheel under `environment/vendor_py310/` as a fallback runtime package source.
