@@ -14,8 +14,9 @@
 - All shell scripts functional: download.sh, method.sh, reproduce.sh, baseline.sh, evaluate.sh, run.sh
 - `scripts/reproduce.sh` now runs the acados method producer before calling the reusable evaluator, so a stale `scoring/scores.json` is not the only reproduction path.
 - Environment: container.def (CUDA base), setup.sh (Python deps)
-- `eval/evaluator.py`: authoritative reproduction path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
-- `scripts/evaluate.sh` is the standard entry point and writes `scoring/scores.json`
+- `method/run_reproduction.py`: authoritative method path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
+- `eval/evaluator.py`: method-agnostic scorer for `checkpoints/reproduction_results.json`
+- `scripts/evaluate.sh` is the standard scoring entry point and writes `scoring/scores.json`
 - scoring/TARGETS.md, scoring/CONSTRAINTS.md, scoring/DIRECTION.md filled and aligned with the current evaluator configuration
 - Audit confirmed the implementation is a real acados-based exact-Hessian / Gauss-Newton comparison, not a surrogate model
 - Verification confirmed the scoring weights prioritize the pendulum core claim while retaining the LQR timing benchmarks as constraint targets
@@ -51,6 +52,7 @@
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
 - Temporary generated files appear when acados regenerates C code during evaluation
+- 2026-04-10 packaging audit found that `scripts/evaluate.sh` had been changed to score `checkpoints/reproduction_results.json`, while the script chain did not reliably regenerate that artifact. Fixed the chain so `scripts/method.sh` runs `method/run_reproduction.py`, then `scripts/evaluate.sh` scores the generated artifact.
 
 ## Pending Job
 

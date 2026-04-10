@@ -25,14 +25,10 @@ echo "Reproducing: Differentiable Nonlinear MPC"
 echo "Paper: 2505.01353"
 echo "=================================================="
 
-# Run all method experiments, then score their raw result artifact via evaluate.sh
+# Run all method experiments and score their raw result artifact.
 echo ""
 echo "=== Running Method ==="
-python3 method/run_reproduction.py
-
-echo ""
-echo "=== Evaluating Results ==="
-bash scripts/evaluate.sh
+bash scripts/method.sh
 
 echo ""
 echo "=================================================="

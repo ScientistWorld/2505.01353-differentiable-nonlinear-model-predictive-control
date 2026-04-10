@@ -33,6 +33,11 @@
 - Confirmed tracked reproduction deliverables are already pushed to `origin/main`; remaining dirty paths are system/trajectory artifacts outside the method/evaluation package.
 - Left `action.yaml` at `done` with milestone `core_claim`.
 
+### [2026-04-10 01:34] - core_claim
+- Fixed a packaging regression in the script chain: `scripts/method.sh` now runs `method/run_reproduction.py` to regenerate raw results, and `scripts/run.sh` / `scripts/reproduce.sh` call method execution before `scripts/evaluate.sh`.
+- Preserved the separation rule by keeping `eval/evaluator.py` method-independent; it only validates and scores the method-produced JSON artifact.
+- Preparing a CPU test submission to verify the corrected end-to-end path in the compute container.
+
 ### [2026-04-10 04:54] - core_claim
 - Corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate `checkpoints/reproduction_results.json` with `method/run_reproduction.py` before scoring it via `eval/evaluator.py`.
 - Fixed helper scripts that incorrectly imported experiment functions from `eval/`; the raw acados experiment code now remains in `method/` while `eval/` remains a method-agnostic scorer.

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Run the paper's method using the packaged reproduction path.
 #
-# The authoritative implementation for this workspace lives in `eval/evaluator.py`,
-# which reproduces the paper's core Section 5.1 claim and a reduced-scale
-# Section 5.2 timing benchmark with the acados sensitivity workflow.
+# The authoritative method implementation lives in `method/run_reproduction.py`.
+# It writes raw method metrics to checkpoints/reproduction_results.json, then
+# the method-agnostic evaluator scores that artifact.
 
 set -e
 
