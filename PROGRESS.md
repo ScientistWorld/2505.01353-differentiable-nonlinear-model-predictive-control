@@ -3,6 +3,7 @@
 ## Final Status
 
 - Final milestone: `core_claim`
+- 2026-04-10 setup retry: the CPU smoke-test submission failed during `environment/setup.sh`, before the job payload ran. The log showed `uv` resolving packages and then failing inside root-mapped fakeroot semaphore handling (`libfakeroot` / `semop`). Switched `environment/setup.sh` to `python3 -m pip install` and revalidated locally with shell syntax checks, Python compilation, and `python3 validate.py --compare`; resubmitting the CPU smoke test.
 - 2026-04-10 packaging update: corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate raw method metrics with `method/run_reproduction.py` before scoring through the method-agnostic evaluator. `python3 -m py_compile ...` and `python3 validate.py --compare` pass locally; a CPU test job is being submitted to validate the corrected end-to-end path in-container.
 - 2026-04-10 dependency packaging update: added the missing `.gitmodules` entry for `method/acados` and made `scripts/download.sh` robust to both submodule checkouts and the pre-populated acados source tree in this workspace. Shell syntax checks, Python compilation, and `python3 validate.py --compare` pass locally; a CPU smoke test is being submitted.
 - 2026-04-10 verification: `python3 validate.py --compare` passed, with reproduced pendulum exact-Hessian error `0.002597` and Gauss-Newton error `2.200135`.
@@ -55,10 +56,11 @@
 - Temporary generated files appear when acados regenerates C code during evaluation
 - 2026-04-10 packaging audit found that `scripts/evaluate.sh` had been changed to score `checkpoints/reproduction_results.json`, while the script chain did not reliably regenerate that artifact. Fixed the chain so `scripts/method.sh` runs `method/run_reproduction.py`, then `scripts/evaluate.sh` scores the generated artifact.
 - 2026-04-10 dependency audit found that `method/acados` was recorded as a gitlink without a `.gitmodules` entry. Added the mapping and made `scripts/download.sh` avoid invoking git update commands on a pre-populated acados directory that has no nested `.git`.
+- 2026-04-10 setup failure: `uv pip install --system` triggered a root-mapped fakeroot IPC error after package resolution. The workaround is to use `python3 -m pip install` in `environment/setup.sh` for this environment.
 
 ## Pending Job
 
-- Submitting CPU test job to run the corrected `scripts/run.sh` path, which rebuilds acados in Release mode and then runs `scripts/reproduce.sh`.
+- Resubmitting CPU test job to run the corrected `scripts/run.sh` path, which rebuilds acados in Release mode and then runs `scripts/reproduce.sh`.
 
 ## Deviations from Paper
 

@@ -2,18 +2,19 @@
 # Install Python packages into the container overlay.
 #
 # Run by the system on the login node inside the container with a persistent overlay.
-# Uses uv for faster installation.
+# Use python -m pip here instead of uv. On this cluster's root-mapped
+# fakeroot overlay, uv can resolve packages successfully and then crash inside
+# libfakeroot semaphore handling before installation completes.
 
 set -e
 
-# Install scientific Python packages
-uv pip install --system numpy scipy matplotlib pillow
+export PIP_ROOT_USER_ACTION=ignore
 
-# Install casadi (required for acados OCP formulation)
-uv pip install --system casadi
+# Install scientific Python packages and CasADi.
+python3 -m pip install numpy scipy matplotlib pillow casadi
 
 # Install acados_template (Python interface for acados)
 # Note: acados must be built first (in download.sh / run.sh)
 cd /home/user/method/acados/interfaces/acados_template
-uv pip install --system -e .
+python3 -m pip install -e .
 cd /home/user

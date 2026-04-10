@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "CPU smoke test after packaging fixes: rebuild acados in Release mode, run scripts/reproduce.sh, and score freshly generated method results. Local shell syntax checks and validate.py --compare passed."
+notes: "Retry CPU smoke test after setup.sh workaround for uv/fakeroot semaphore failure: use python3 -m pip, rebuild acados in Release mode, run scripts/reproduce.sh, and score freshly generated method results. Local syntax, py_compile, and validate.py --compare passed."
