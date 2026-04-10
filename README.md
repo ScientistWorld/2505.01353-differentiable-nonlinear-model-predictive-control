@@ -267,6 +267,11 @@ Key reference timings (acados):
 - Local checks pass: shell syntax validation, Python compilation, and `python3 validate.py --compare`.
 - Submitting a CPU smoke test to verify the full `scripts/run.sh` -> `scripts/reproduce.sh` -> `scripts/evaluate.sh` path inside the compute container after the setup workaround.
 
+### [2026-04-10 17:19] - core_claim
+- The CPU smoke-test environment setup failed before the payload because `environment/setup.sh` attempted an editable acados_template install from `/home/user/method/acados`, which is not reliably visible during the setup overlay phase.
+- Removed the workspace-dependent install from `environment/setup.sh`; runtime scripts already import the acados Python interface from source via `PYTHONPATH`.
+- Local checks pass after the fix: shell syntax validation, acados_template source import, Python compilation, and `python3 validate.py --compare`. Resubmitting the CPU smoke test.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
