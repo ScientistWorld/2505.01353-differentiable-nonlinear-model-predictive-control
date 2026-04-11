@@ -10,7 +10,7 @@ import time
 
 import numpy as np
 
-from bootstrap_runtime import ensure_casadi_importable
+from bootstrap_runtime import ensure_casadi_importable, preload_acados_dependencies
 
 
 def _import_acados():
@@ -24,6 +24,7 @@ def _import_acados():
             f"{lib_path}:{ld_library_path}" if ld_library_path else lib_path
         )
     ca = ensure_casadi_importable()
+    preload_acados_dependencies(acados_src)
     from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 
     return ca, AcadosModel, AcadosOcp, AcadosOcpSolver

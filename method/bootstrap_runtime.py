@@ -4,11 +4,15 @@
 from __future__ import annotations
 
 import glob
+import ctypes
 import importlib
 import os
 import traceback
 import sys
 from typing import Iterable
+
+
+_PRELOADED_SHARED_LIBS: list[ctypes.CDLL] = []
 
 
 def _candidate_roots() -> list[str]:
@@ -103,3 +107,26 @@ def ensure_casadi_importable():
         f"Failures: {failure_messages}; "
         f"sys.path[:12]={sys.path[:12]}"
     )
+
+
+def preload_acados_dependencies(acados_dir: str | None = None) -> list[str]:
+    """
+    Preload acados shared-library dependencies with RTLD_GLOBAL.
+
+    Some compute-node loader setups fail to resolve HPIPM symbols referenced by
+    `libacados.so` unless the dependent shared objects are explicitly loaded by
+    absolute path first.
+    """
+    if acados_dir is None:
+        acados_dir = os.environ.get("ACADOS_SOURCE_DIR", "/home/user/method/acados")
+    lib_dir = os.path.join(acados_dir, "lib")
+    mode = getattr(ctypes, "RTLD_GLOBAL", 0)
+    loaded: list[str] = []
+    for lib_name in ("libblasfeo.so.0", "libhpipm.so", "libqpOASES_e.so", "libacados.so"):
+        lib_path = os.path.join(lib_dir, lib_name)
+        if not os.path.isfile(lib_path):
+            raise FileNotFoundError(f"Missing shared library dependency: {lib_path}")
+        handle = ctypes.CDLL(lib_path, mode=mode)
+        _PRELOADED_SHARED_LIBS.append(handle)
+        loaded.append(lib_path)
+    return loaded

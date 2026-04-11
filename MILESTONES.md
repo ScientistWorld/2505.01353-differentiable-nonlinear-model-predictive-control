@@ -93,6 +93,11 @@
 - The new failure moved into acados shared-library loading: `libacados.so` raised `undefined symbol: d_ocp_qp_seed_memsize` inside `AcadosOcpSolver`, while the installed library stamp still reported acados commit `c1c1e81` even though the source tree is at `530daae`.
 - Added `scripts/build_acados.sh` and switched both `scripts/run.sh` and `scripts/download.sh` to use it so every build starts from a clean acados build/install state. `scripts/run.sh` now also performs a direct `ctypes.CDLL` load check on `libacados.so` before launching the method.
 
+### [2026-04-11 00:22] - core_claim
+- CPU smoke-test job `3f681f30-85a` confirmed the clean rebuild path is taking effect: the job rebuilt acados from source commit `0e37d8f` and replaced the stale installed commit `c1c1e81`.
+- The remaining failure is now isolated to dynamic loading on the compute node: the fresh `libacados.so` still failed `ctypes.CDLL(...)` with `undefined symbol: d_ocp_qp_seed_memsize`, even though `libhpipm.so` exports that symbol and `libacados.so` lists `libhpipm.so` as a dependency.
+- Patched the runtime bootstrap to preload `libblasfeo.so.0`, `libhpipm.so`, `libqpOASES_e.so`, and `libacados.so` by absolute path with `RTLD_GLOBAL` before importing `acados_template`. `scripts/run.sh` now uses the same preload path in its preflight check.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

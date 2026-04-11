@@ -80,10 +80,13 @@ echo ""
 echo ">>> Verifying acados shared-library linkage..."
 python3 - <<'PY'
 import ctypes
+import sys
 
-lib_path = "/home/user/method/acados/lib/libacados.so"
-ctypes.CDLL(lib_path)
-print(f"ctypes_loaded={lib_path}")
+sys.path.insert(0, "/home/user/method")
+from bootstrap_runtime import preload_acados_dependencies
+
+loaded = preload_acados_dependencies("/home/user/method/acados")
+print(f"preloaded_shared_libs={loaded}")
 PY
 
 echo ""
