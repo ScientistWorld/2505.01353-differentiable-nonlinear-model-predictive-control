@@ -3,6 +3,8 @@
 ## Final Status
 
 - Final milestone: `core_claim`
+- 2026-04-11 successful compute validation: CPU smoke-test job `58199a5f-9c0` finished with return code 0 and executed the full packaged path inside the container: runtime bootstrap, clean acados rebuild, shared-library preload, `method/run_reproduction.py`, and `eval/evaluator.py`. Fresh outputs were written to `checkpoints/reproduction_results.json` and `scoring/scores.json`.
+- 2026-04-11 confirmed compute-node results: pendulum exact-Hessian sensitivity error `0.0025974539`, pendulum Gauss-Newton error `2.2001354963`, bounded-LQR high `28.4525 ms`, bounded-LQR low `34.3578 ms`.
 - 2026-04-10 setup retry: the CPU smoke-test submission failed during `environment/setup.sh`, before the job payload ran. The log showed `uv` resolving packages and then failing inside root-mapped fakeroot semaphore handling (`libfakeroot` / `semop`). Switched `environment/setup.sh` to `python3 -m pip install` and revalidated locally with shell syntax checks, Python compilation, and `python3 validate.py --compare`; resubmitting the CPU smoke test.
 - 2026-04-10 setup retry 2: the next environment attempt failed before the job payload because `environment/setup.sh` tried to install `acados_template` from `/home/user/method/acados/...`, but the setup overlay did not have that workspace path available. Removed the workspace-dependent editable install and rely on the runtime `PYTHONPATH` exports in `scripts/run.sh` and `scripts/method.sh`; shell syntax checks, `acados_template` source import, Python compilation, and `python3 validate.py --compare` pass locally.
 - 2026-04-10 packaging update: corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate raw method metrics with `method/run_reproduction.py` before scoring through the method-agnostic evaluator. `python3 -m py_compile ...` and `python3 validate.py --compare` pass locally; a CPU test job is being submitted to validate the corrected end-to-end path in-container.
@@ -34,8 +36,8 @@
 |---|---|---|---|
 | pendulum (EXACT) | sensitivity_max_error | 0.0026 | 0.01 |
 | pendulum (GN) | sensitivity_max_error | 2.2001 | 10.0 |
-| bounded_lqr_umax_high | solve_and_sens_time_ms | 48.95 | 34.5 |
-| bounded_lqr_umax_low | solve_and_sens_time_ms | 67.00 | 42.0 |
+| bounded_lqr_umax_high | solve_and_sens_time_ms | 28.45 | 34.5 |
+| bounded_lqr_umax_low | solve_and_sens_time_ms | 34.36 | 42.0 |
 
 **Core claim validated**: EXACT Hessian gives accurate parametric sensitivities (error 0.0026, paper 0.01). Gauss-Newton remains materially worse (error 2.20), preserving the qualitative claim that the approximate Hessian gives incorrect sensitivities relative to the exact-Hessian method.
 
@@ -73,13 +75,7 @@
 
 ## Pending Job
 
-- 2026-04-10 18:50 UTC: resubmitting CPU test job after fixing the incomplete CasADi import observed in job `07c40127-2b3`. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
-- 2026-04-10 22:56 UTC: resubmitting CPU test job after adding runtime import hardening for CasADi. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
-- 2026-04-10 23:02 UTC: resubmitting CPU test job after switching to a fully vendored Python 3.10 runtime path and making `environment/setup.sh` a no-op. Local shell syntax checks, bootstrap CasADi import, and `python3 validate.py --compare` pass before submission.
-- 2026-04-10 23:55 UTC: resubmitting CPU test job after tightening the CasADi bootstrap to the active interpreter version and exposing per-root import failures in the job log. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
-- 2026-04-11 00:10 UTC: resubmitting CPU test job after replacing the in-place acados rebuild with a clean rebuild helper and adding a direct post-build `ctypes.CDLL` linkage probe for `libacados.so`. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
-- 2026-04-11 00:22 UTC: resubmitting CPU test job after adding an explicit `RTLD_GLOBAL` preload of `libblasfeo`, `libhpipm`, `libqpOASES_e`, and `libacados` to work around the compute-node loader ordering failure exposed by job `3f681f30-85a`. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass before submission.
-- 2026-04-11 00:36 UTC: resubmitting CPU test job after making `ensure_casadi_importable()` idempotent so repeated `_import_acados()` calls reuse the same CasADi module instead of creating incompatible `SX`/`MX` identities. Local shell syntax checks and Python compilation pass before submission; a direct runtime regression check on the login node is not meaningful because the vendored NumPy/CasADi wheels target the compute node's Python 3.10, not the login node's Python 3.12.
+- No pending jobs. The final CPU smoke-test job `58199a5f-9c0` completed successfully on 2026-04-11 and validated the packaged environment on cluster hardware.
 
 ## Deviations from Paper
 

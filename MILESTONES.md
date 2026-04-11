@@ -103,6 +103,11 @@
 - The new failure is a pure Python/CasADi module-identity bug: during the later LQR setup, `acados_template` rejected `model.x` with `TypeError: model.x must be casadi.SX or casadi.MX, got <class 'casadi.casadi.SX'>`.
 - Root cause: `ensure_casadi_importable()` was force-removing `casadi` from `sys.modules` on every call, so repeated `_import_acados()` calls in `run_reproduction.py` created a second CasADi module instance while `acados_template` still held `SX`/`MX` from the first one. Patched the bootstrap to reuse an already-valid CasADi module instead of reimporting it.
 
+### [2026-04-11 00:49] - core_claim
+- CPU smoke-test job `58199a5f-9c0` completed successfully end to end inside the compute container with return code 0.
+- Verified the full packaged path `scripts/run.sh -> scripts/reproduce.sh -> scripts/method.sh -> scripts/evaluate.sh`, including vendored Python runtime bootstrap, clean acados rebuild, shared-library preload, raw result generation, and scoring.
+- The compute-node run reproduced the core pendulum claim again (`exact=0.002597`, `gauss_newton=2.200135`) and also completed both reduced-scale LQR timing benchmarks (`28.45 ms`, `34.36 ms`), so the packaged environment is now confirmed runnable on cluster hardware rather than only on the login node.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

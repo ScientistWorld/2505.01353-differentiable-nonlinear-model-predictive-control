@@ -1,8 +1,6 @@
 # IMPORTANT: Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends. Sleeping blocks the entire pipeline.
-action: submit
-gpus: 0
-test: true
+action: done
 milestone: core_claim
-notes: "CPU smoke test after job c40a31e6-f78 showed that the libacados.so loader issue is mitigated and the run now reaches the bounded-LQR experiment, but repeated _import_acados() calls were recreating the casadi module and breaking acados_template type checks (model.x reported as casadi.SX but failed isinstance). method/bootstrap_runtime.py now reuses an already-valid casadi module instead of deleting and reimporting it on every call. Local shell syntax checks and Python compilation passed at 2026-04-11 00:36 UTC; direct login-node runtime probing remains invalid because the vendored cp310 wheels target the compute node's Python 3.10, not the login node's Python 3.12."
+notes: "Compute job 58199a5f-9c0 completed successfully and validated the full packaged reproduction path inside the container. The workspace reaches core_claim with a real acados-based exact-Hessian sensitivity reproduction on the pendulum task (exact error 0.002597 vs Gauss-Newton 2.200135), plus runnable reduced-scale LQR timing benchmarks, and scoring/scores.json was regenerated from the successful compute-node run."
