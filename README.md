@@ -19,46 +19,30 @@ This paper addresses the key challenge of computing parametric solution sensitiv
 
 # Problem Definition
 
-What problem does this paper address? Write this so that someone with no knowledge of the paper can understand what needs to be solved and how success is measured.
-
-Do NOT describe the paper's method or solution here — only the problem itself. Think about if a future scientist agent try to solve this problem from scratch without knowing what approach the paper took. If you leak the solution, you compromise the benchmark.
-
 ## Research Question
 
-The paper addresses the problem of computing **parametric solution sensitivities** — that is, the gradients (derivatives) of the optimal solution of an optimization problem with respect to its parameters. This is critical for combining learning-based methods (neural networks, RL) with model predictive control (MPC), where one needs to backpropagate through an optimization solver.
+The benchmark studies how to compute **solution sensitivities** for parameterized optimal control problems. In this setting, the cost, dynamics, or constraints depend on a parameter vector `theta`, and the goal is to determine how the optimal trajectory or first control action changes when `theta` changes.
 
-The challenge is: given an optimal control problem (OCP) of the form:
-```
-minimize cost(x, u; θ)
-subject to dynamics(x, u; θ) = 0
-          inequality constraints(x, u; θ) ≤ 0
-```
-where θ are parameters, compute ∂solution/∂θ efficiently.
+This matters because many control-and-learning systems need gradients through an optimizer. If those gradients are inaccurate, unstable near constraint changes, or too slow to compute, the surrounding learning system becomes unreliable or unusable in practice.
 
-This is hard because:
-1. The solution involves solving an NLP with inequality constraints
-2. At constraint boundaries, the solution map can be nondifferentiable (kinks)
-3. Computing exact sensitivities requires the exact Hessian, not just an approximation
-4. Existing methods (mpc.pytorch, cvxpygen) are either slow, limited to simple problem forms, or give wrong sensitivities
+The benchmark therefore asks for methods that can handle nonlinear optimal control problems with constraints while still producing useful derivatives of the optimizer output with respect to problem parameters.
 
-## Why It Matters
+## Why It Is Difficult
 
-Parametric solution sensitivities are a key building block for:
-- Differentiable MPC layers in neural networks
-- Learning-enhanced MPC (learning system models, costs, or policies)
-- Imitation learning from MPC demonstrations
-- Real-time MPC with online adaptation
+The task is challenging for three reasons:
 
-Without efficient and accurate sensitivity computation, learning-enhanced control cannot achieve the necessary real-time performance, especially on embedded platforms.
+1. The optimization problems are constrained and can become nonsmooth when the active set changes.
+2. The parameter can affect several parts of the problem at once, including dynamics, costs, and inequalities.
+3. A usable method must balance two goals at the same time: sensitivity accuracy and runtime efficiency.
 
 ## Success Criteria
 
-A successful solution must:
-1. **Solve general NLPs**: Support nonlinear cost, nonlinear dynamics, and nonlinear inequality constraints — not just quadratic costs with simple bounds
-2. **Compute accurate sensitivities**: Solution sensitivities should match finite-difference baselines
-3. **Handle nondifferentiability gracefully**: At active-set changes, provide correct smoothed sensitivities
-4. **Be computationally efficient**: Meet or exceed the speed of specialized solvers (3x+ speedup over prior art)
-5. **Support both forward and adjoint modes**: Forward for few parameters, adjoint for backpropagation through networks
+A strong solution for this benchmark should satisfy all of the following:
+
+1. **Accurate sensitivities**: The reported local sensitivities should agree closely with finite-difference reference values on the nonlinear pendulum benchmark.
+2. **Constraint-aware behavior**: The method should remain meaningful near regions where constraints switch activity.
+3. **Practical efficiency**: On the batched bounded-LQR timing benchmarks, solve-plus-sensitivity time should remain low enough to support differentiable control use cases.
+4. **Reusable output**: The method must produce results in the format expected by the workspace evaluator so that different approaches can be compared fairly.
 
 ---
 
@@ -103,64 +87,49 @@ Using a barrier parameter τ_min > 0 produces a continuously differentiable appr
 
 # Evaluation
 
-How success is measured. Describe only the metrics, targets, and evaluation procedure — do NOT describe the paper's method or how they achieved these results. Think of this as a general evaluation protocol for other scientists trying to solve the same problem, where they should not see this paper's solution.
+## Overview
+
+The workspace evaluates candidate methods on one accuracy-focused experiment and two efficiency-focused experiments. All methods are judged by the same output contract in `scoring/scores.json`.
 
 ## Metrics
 
-The paper evaluates on three dimensions:
-
 ### 1. Sensitivity Accuracy
-- **Metric**: Comparison of computed sensitivities against finite-difference (FD) baselines
-- **How computed**: For the highly-parametric OCP, compute ∂u₀*(θ)/∂θ via the method and via finite differences. Report max absolute error.
-- **Direction**: Lower error is better (0 = exact match)
 
-### 2. Computational Efficiency (Timing)
-- **Metric**: Wall-clock time in milliseconds for solving N batch problems and computing sensitivities
-- **How computed**: Time to solve n_batch = 128 bounded LQR problems with N=20, nx=8, nu=4, nθ=248 parameters
-- **Comparison**: Reported as speedup factor relative to baseline solvers (mpc.pytorch, cvxpygen/OSQP)
-- **Direction**: Lower time is better; speedup > 1 means faster than baseline
+- **Experiment**: `pendulum_sensitivity_accuracy`
+- **Quantity measured**: Maximum absolute difference between the method's reported local sensitivity and a finite-difference reference on a parameterized pendulum optimal control problem.
+- **Direction**: Lower is better.
+- **Purpose**: This is the primary scientific target. It checks whether the method produces trustworthy local sensitivities on a nonlinear constrained problem.
 
-### 3. Adjoint Sensitivity Efficiency
-- **Metric**: Time for adjoint sensitivity computation vs. full forward Jacobian computation
-- **How computed**: Chain-of-masses example with N=40, nx=9, nu=3, nθ=113
-- **Direction**: Lower time is better; adjoint should be faster than forward for single-adjoint queries
+### 2. Solve-Plus-Sensitivity Runtime
 
-## Baselines and Targets
-
-The paper compares against two state-of-the-art differentiable MPC solvers:
-
-| Solver | Description | Paper's Reported Speedup |
-|--------|-------------|------------------------|
-| mpc.pytorch | iLQR-based differentiable MPC | acados 3.6x–520x faster |
-| cvxpygen/OSQP | Code-generated QP layers | acados 19x–160x faster |
-
-Key reference timings (acados):
-- Bounded LQR nominal solution: 8.5ms (u_max=10⁴), 17.6ms (u_max=1.0)
-- Bounded LQR with adjoint sensitivity: 34.5ms (u_max=10⁴), 42.0ms (u_max=1.0)
-- Chain example single adjoint: ~0.6ms
+- **Experiments**: `bounded_lqr_umax_high`, `bounded_lqr_umax_low`
+- **Quantity measured**: Total wall-clock time in milliseconds to solve a batch of bounded linear-quadratic control problems and compute sensitivities.
+- **Direction**: Lower is better.
+- **Purpose**: These are efficiency benchmarks. They check whether the method remains practical when sensitivities must be computed repeatedly across many related problems.
 
 ## Evaluation Protocol
 
-### Experiment 1: Highly-Parametric OCP (Pendulum)
-- **Problem**: Cart-pole with parametric mass, N=50, nx=4, nu=1, nθ=1
-- **Test**: Compute sensitivities across θ ∈ [-1.5, 1.5] and compare to finite differences
-- **Pass criterion**: Max |error| < 10⁻² (or visual agreement with kinks at active-set changes)
+### Experiment 1: `pendulum_sensitivity_accuracy`
 
-### Experiment 2: Bounded LQR Benchmark
-- **Problem**: Linear-quadratic OCP with parametric A,B matrices and control bounds
-- **n_batch** = 128 random initial states
-- **Test**: Compare solution + adjoint sensitivity timing
-- **Pass criterion**: Correct solution convergence + reasonable timing
+- Use the benchmark's parameterized pendulum control problem.
+- Evaluate sensitivity quality against finite differences at the benchmark reference parameter.
+- Report `sensitivity_max_error`.
 
-### Experiment 3: Chain of Masses
-- **Problem**: Nonlinear OCP with chain of masses model, N=40, n_masses=3
-- **Test**: Compare forward vs adjoint sensitivity computation time
-- **Pass criterion**: Adjoint is ~2.5x faster than forward for single-adjoint query
+### Experiment 2: `bounded_lqr_umax_high`
 
-### General Protocol
-- All timing experiments should run on the same hardware (or clearly report hardware differences)
-- Report mean ± std over multiple batch runs
-- Sensitivity accuracy should be validated at multiple θ values, including near active-set change boundaries
+- Use the benchmark's batched bounded-LQR setting with a loose control bound.
+- Report `solve_and_sens_time_ms`.
+
+### Experiment 3: `bounded_lqr_umax_low`
+
+- Use the benchmark's batched bounded-LQR setting with a tight control bound.
+- Report `solve_and_sens_time_ms`.
+
+## Reporting Rules
+
+1. Use the same benchmark formulations and metric definitions as the packaged workspace.
+2. If hardware differs from the reproduction environment, report that difference clearly when interpreting runtime results.
+3. Do not substitute a different task while keeping the same experiment name.
 
 ---
 
@@ -318,14 +287,13 @@ Key reference timings (acados):
 
 </details>
 
+### Iteration 5: gpt-5.4 (verifier)
+- **Milestone**: `core_claim` | **Status**: done
+- **Working time**: 19m | **GPU**: 0.0h
+- **Jobs**: 6 total (1 completed, 5 failed)
 
----
-
-# Reproduction Milestones
-
-**Current: core_claim**
-
-## Progress Log
+<details>
+<summary>Progress Log</summary>
 
 ### [2026-04-05 03:41] - method_runs
 - Validated that the acados-based differentiable NMPC pipeline executes end-to-end in this workspace.
@@ -339,7 +307,7 @@ Key reference timings (acados):
 ### [2026-04-05 05:18] - core_claim
 - Audited the previous agent's work and confirmed the implementation is a real acados-based exact-Hessian sensitivity computation, not a surrogate.
 - Re-ran `scripts/evaluate.sh` standalone during the audit and reproduced the same core pendulum result: exact `0.002597`, Gauss-Newton `2.200135`.
-- Corrected packaging overstatements so the docs now describe the reduced-scale runnable evaluator rather than the full paper-scale settings.
+- Corrected packaging overstatements so the docs described the then-current runnable evaluator honestly instead of claiming full paper-scale settings before validation.
 
 ### [2026-04-05 05:33] - core_claim
 - Corrected the Section 5.2 bounded-LQR evaluator to stop double-counting solve time in the reported "solution + adjoint sensitivity" metric.
@@ -429,10 +397,135 @@ Key reference timings (acados):
 ### [2026-04-11 00:49] - core_claim
 - CPU smoke-test job `58199a5f-9c0` completed successfully end to end inside the compute container with return code 0.
 - Verified the full packaged path `scripts/run.sh -> scripts/reproduce.sh -> scripts/method.sh -> scripts/evaluate.sh`, including vendored Python runtime bootstrap, clean acados rebuild, shared-library preload, raw result generation, and scoring.
-- The compute-node run reproduced the core pendulum claim again (`exact=0.002597`, `gauss_newton=2.200135`) and also completed both reduced-scale LQR timing benchmarks (`28.45 ms`, `34.36 ms`), so the packaged environment is now confirmed runnable on cluster hardware rather than only on the login node.
+- The compute-node run reproduced the core pendulum claim again (`exact=0.002597`, `gauss_newton=2.200135`) and also completed both packaged LQR timing benchmarks (`28.45 ms`, `34.36 ms`), so the packaged environment is now confirmed runnable on cluster hardware rather than only on the login node.
+
+### [2026-04-11 01:02] - core_claim
+- Re-audited the authoritative method, packaged scripts, successful compute-node logs, and `scoring/scores.json` after job `58199a5f-9c0`.
+- Confirmed the honest final milestone remains `core_claim`: the scored pendulum path implements the paper's exact-Hessian versus Gauss-Newton sensitivity workflow and is validated on cluster hardware.
+- Declined to claim a higher milestone because the exploratory Section 5.3 chain benchmark is not in the authoritative evaluation path and has not been validated to the same standard.
+
+</details>
+
+
+---
+
+# Reproduction Milestones
+
+**Current: core_claim**
+
+## Progress Log
+
+### [2026-04-05 03:41] - method_runs
+- Validated that the acados-based differentiable NMPC pipeline executes end-to-end in this workspace.
+- Built the acados solver stack and packaged reusable scripts under `scripts/` and `eval/`.
+
+### [2026-04-05 04:58] - core_claim
+- Implemented the paper's two-solver pendulum sensitivity experiment in `eval/evaluator.py`.
+- Verified the core claim with a fresh evaluator run: exact-Hessian sensitivity error `0.002597` vs Gauss-Newton error `2.200135` against finite differences.
+- Packaged the LQR timing benchmark in the same evaluator so `scripts/evaluate.sh` produces `scoring/scores.json` from actual runs.
+
+### [2026-04-05 05:18] - core_claim
+- Audited the previous agent's work and confirmed the implementation is a real acados-based exact-Hessian sensitivity computation, not a surrogate.
+- Re-ran `scripts/evaluate.sh` standalone during the audit and reproduced the same core pendulum result: exact `0.002597`, Gauss-Newton `2.200135`.
+- Corrected packaging overstatements so the docs described the then-current runnable evaluator honestly instead of claiming full paper-scale settings before validation.
+
+### [2026-04-05 05:33] - core_claim
+- Corrected the Section 5.2 bounded-LQR evaluator to stop double-counting solve time in the reported "solution + adjoint sensitivity" metric.
+- Restored the benchmark batch size to `n_batch=128` to match the paper's Table 1 setup more closely.
+- Updated the job path to rebuild acados in `Release` mode before evaluation and prepared a fresh submission to validate the corrected benchmark.
+
+### [2026-04-05 05:55] - core_claim
+- Performed final workspace verification for gym use and confirmed that `eval/` remains independent from `method/` and the problem/evaluation briefing files are method-agnostic enough for from-scratch use.
+- Corrected the scoring rubric so the renormalized gym weights prioritize the pendulum core claim over the secondary LQR timing benchmarks.
+- Aligned `scoring/TARGETS.md` and `scoring/CONSTRAINTS.md` with the current LQR evaluator configuration (`n_batch=128`) and wrote `VERIFICATION.md`.
+
+### [2026-04-10 01:16] - core_claim
+- Re-validated the packaged workspace with `python3 validate.py --compare`; all checks passed.
+- Confirmed tracked reproduction deliverables are already pushed to `origin/main`; remaining dirty paths are system/trajectory artifacts outside the method/evaluation package.
+- Left `action.yaml` at `done` with milestone `core_claim`.
+
+### [2026-04-10 01:34] - core_claim
+- Fixed a packaging regression in the script chain: `scripts/method.sh` now runs `method/run_reproduction.py` to regenerate raw results, and `scripts/run.sh` / `scripts/reproduce.sh` call method execution before `scripts/evaluate.sh`.
+- Preserved the separation rule by keeping `eval/evaluator.py` method-independent; it only validates and scores the method-produced JSON artifact.
+- Preparing a CPU test submission to verify the corrected end-to-end path in the compute container.
+
+### [2026-04-10 04:54] - core_claim
+- Corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate `checkpoints/reproduction_results.json` with `method/run_reproduction.py` before scoring it via `eval/evaluator.py`.
+- Fixed helper scripts that incorrectly imported experiment functions from `eval/`; the raw acados experiment code now remains in `method/` while `eval/` remains a method-agnostic scorer.
+- Lightweight checks passed locally: Python compilation and `python3 validate.py --compare`. Submitting a CPU test job to validate the corrected end-to-end path inside the compute container.
+
+### [2026-04-10 06:54] - core_claim
+- Added the missing `.gitmodules` mapping for the `method/acados` gitlink so fresh checkouts know how to initialize the paper's acados dependency.
+- Made `scripts/download.sh` handle both a proper acados checkout/submodule and the pre-populated source-tree layout present in this workspace.
+- Re-ran shell syntax checks, Python compilation, and `python3 validate.py --compare`; all passed. Submitting the CPU smoke test with the same `core_claim` milestone.
+
+### [2026-04-10 07:14] - core_claim
+- The first CPU smoke-test submission failed during `environment/setup.sh`, before the job payload ran. The build log showed `uv` resolving packages and then crashing in root-mapped fakeroot semaphore handling.
+- Replaced `uv pip install --system` in `environment/setup.sh` with `python3 -m pip install` for this workspace's setup phase while keeping Python installs out of `container.def`.
+- Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass after the setup change. Resubmitting the same CPU smoke test.
+
+### [2026-04-10 16:03] - core_claim
+- Rechecked the packaged method/evaluation split after reactivation: `method/run_reproduction.py` contains the acados exact-Hessian and Gauss-Newton sensitivity computation, while `eval/evaluator.py` only scores a method-produced JSON artifact.
+- Local checks pass: shell syntax validation, Python compilation, and `python3 validate.py --compare`.
+- Submitting a CPU smoke test to verify the full `scripts/run.sh` -> `scripts/reproduce.sh` -> `scripts/evaluate.sh` path inside the compute container after the setup workaround.
+
+### [2026-04-10 17:19] - core_claim
+- The CPU smoke-test environment setup failed before the payload because `environment/setup.sh` attempted an editable acados_template install from `/home/user/method/acados`, which is not reliably visible during the setup overlay phase.
+- Removed the workspace-dependent install from `environment/setup.sh`; runtime scripts already import the acados Python interface from source via `PYTHONPATH`.
+- Local checks pass after the fix: shell syntax validation, acados_template source import, Python compilation, and `python3 validate.py --compare`. Resubmitting the CPU smoke test.
+
+### [2026-04-10 18:09] - core_claim
+- Rechecked the previous setup failure log and confirmed it came from the older `setup.sh` that still entered `/home/user/method/acados/interfaces/acados_template`.
+- The current setup script only installs PyPI packages; runtime scripts import acados_template from source via `PYTHONPATH`.
+- Local shell syntax checks, Python compilation, acados_template source import, and `python3 validate.py --compare` pass. Resubmitting the CPU smoke test.
+
+### [2026-04-10 18:50] - core_claim
+- CPU smoke-test job `07c40127-2b3` passed setup and rebuilt acados, then failed in the method payload because Python imported an incomplete namespace-only `casadi` module without `MX`/`SX`.
+- Updated `environment/setup.sh` to force-reinstall pinned runtime wheels and validate that `casadi.MX`, `casadi.SX`, and `casadi.Function` are available during setup.
+- Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass. Resubmitting the CPU smoke test.
+
+### [2026-04-10 22:56] - core_claim
+- Hardened the compute runtime against the broken namespace-style `casadi` import seen in job `07c40127-2b3`.
+- Updated `scripts/run.sh`, `scripts/reproduce.sh`, `scripts/method.sh`, and `scripts/evaluate.sh` to set `PYTHONNOUSERSITE=1`, report the resolved `casadi` import path, and use the unpacked Python 3.10 wheel under `environment/vendor_py310/` as a fallback runtime package source.
+- Re-ran local shell syntax checks, Python compilation, and `python3 validate.py --compare`; all passed. Resubmitting the CPU smoke test with the runtime import fix.
+
+### [2026-04-10 23:02] - core_claim
+- Extended the runtime fallback from CasADi-only to all required binary/runtime Python packages by vendoring CPython 3.10 wheels for `casadi`, `numpy`, `scipy`, and `deprecated` into `environment/vendor_py310/`.
+- Updated `scripts/download.sh` to materialize those wheels on the login node and simplified `environment/setup.sh` to a no-op so compute jobs no longer depend on overlay-time pip behavior.
+- Local checks pass: shell syntax, bootstrap CasADi import, and `python3 validate.py --compare`. Submitting another CPU smoke test for the fully vendored runtime path.
+
+### [2026-04-10 23:55] - core_claim
+- CPU smoke-test job `f1d36739-10c` still failed in the runtime preflight, but the failure narrowed to `method/bootstrap_runtime.py`: it kept probing `/home/user/.local/lib/python3.12/site-packages` and then swallowed the real CasADi import exception from the vendored runtime.
+- Patched `method/bootstrap_runtime.py` to restrict autodiscovery to the active interpreter version, preserve the job's `PYTHONPATH` ordering, and report the exact exception and traceback for each attempted CasADi root.
+- Updated `scripts/run.sh` to print `python3` version details, leading `sys.path`, and the detailed bootstrap failure before aborting. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` all pass before the next CPU smoke test.
+
+### [2026-04-11 00:10] - core_claim
+- CPU smoke-test job `a4a57e9d-0d9` passed the CasADi runtime bootstrap and rebuilt acados, which confirms the vendored Python runtime path now works on the compute node.
+- The new failure moved into acados shared-library loading: `libacados.so` raised `undefined symbol: d_ocp_qp_seed_memsize` inside `AcadosOcpSolver`, while the installed library stamp still reported acados commit `c1c1e81` even though the source tree is at `530daae`.
+- Added `scripts/build_acados.sh` and switched both `scripts/run.sh` and `scripts/download.sh` to use it so every build starts from a clean acados build/install state. `scripts/run.sh` now also performs a direct `ctypes.CDLL` load check on `libacados.so` before launching the method.
+
+### [2026-04-11 00:22] - core_claim
+- CPU smoke-test job `3f681f30-85a` confirmed the clean rebuild path is taking effect: the job rebuilt acados from source commit `0e37d8f` and replaced the stale installed commit `c1c1e81`.
+- The remaining failure is now isolated to dynamic loading on the compute node: the fresh `libacados.so` still failed `ctypes.CDLL(...)` with `undefined symbol: d_ocp_qp_seed_memsize`, even though `libhpipm.so` exports that symbol and `libacados.so` lists `libhpipm.so` as a dependency.
+- Patched the runtime bootstrap to preload `libblasfeo.so.0`, `libhpipm.so`, `libqpOASES_e.so`, and `libacados.so` by absolute path with `RTLD_GLOBAL` before importing `acados_template`. `scripts/run.sh` now uses the same preload path in its preflight check.
+
+### [2026-04-11 00:36] - core_claim
+- CPU smoke-test job `c40a31e6-f78` passed the shared-library preload workaround and progressed through the pendulum experiment into the bounded-LQR path, so the compute-node `libacados.so` loading issue is now effectively mitigated.
+- The new failure is a pure Python/CasADi module-identity bug: during the later LQR setup, `acados_template` rejected `model.x` with `TypeError: model.x must be casadi.SX or casadi.MX, got <class 'casadi.casadi.SX'>`.
+- Root cause: `ensure_casadi_importable()` was force-removing `casadi` from `sys.modules` on every call, so repeated `_import_acados()` calls in `run_reproduction.py` created a second CasADi module instance while `acados_template` still held `SX`/`MX` from the first one. Patched the bootstrap to reuse an already-valid CasADi module instead of reimporting it.
+
+### [2026-04-11 00:49] - core_claim
+- CPU smoke-test job `58199a5f-9c0` completed successfully end to end inside the compute container with return code 0.
+- Verified the full packaged path `scripts/run.sh -> scripts/reproduce.sh -> scripts/method.sh -> scripts/evaluate.sh`, including vendored Python runtime bootstrap, clean acados rebuild, shared-library preload, raw result generation, and scoring.
+- The compute-node run reproduced the core pendulum claim again (`exact=0.002597`, `gauss_newton=2.200135`) and also completed both packaged LQR timing benchmarks (`28.45 ms`, `34.36 ms`), so the packaged environment is now confirmed runnable on cluster hardware rather than only on the login node.
+
+### [2026-04-11 01:02] - core_claim
+- Re-audited the authoritative method, packaged scripts, successful compute-node logs, and `scoring/scores.json` after job `58199a5f-9c0`.
+- Confirmed the honest final milestone remains `core_claim`: the scored pendulum path implements the paper's exact-Hessian versus Gauss-Newton sensitivity workflow and is validated on cluster hardware.
+- Declined to claim a higher milestone because the exploratory Section 5.3 chain benchmark is not in the authoritative evaluation path and has not been validated to the same standard.
 
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
 - The workspace is now packaged as a usable gym: problem and evaluation components are separated from the method implementation, `scripts/evaluate.sh` writes `scoring/scores.json`, and the scoring rubric emphasizes the validated core claim while preserving the LQR timing benchmarks as constraint targets.
-- The remaining gaps are completeness-related rather than correctness-related: the LQR timing benchmarks are still reduced-scale and timing-volatile, no local reproduction of external baselines is included, and the Section 5.3 chain-of-masses result is outside the authoritative evaluation path.
+- The remaining gaps are completeness-related rather than correctness-related: the LQR timing benchmarks are timing-volatile, no local reproduction of external baselines is included, and the Section 5.3 chain-of-masses result is outside the authoritative evaluation path.

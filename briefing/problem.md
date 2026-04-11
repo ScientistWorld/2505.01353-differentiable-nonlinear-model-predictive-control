@@ -1,42 +1,26 @@
 # Problem Definition
 
-What problem does this paper address? Write this so that someone with no knowledge of the paper can understand what needs to be solved and how success is measured.
-
-Do NOT describe the paper's method or solution here — only the problem itself. Think about if a future scientist agent try to solve this problem from scratch without knowing what approach the paper took. If you leak the solution, you compromise the benchmark.
-
 ## Research Question
 
-The paper addresses the problem of computing **parametric solution sensitivities** — that is, the gradients (derivatives) of the optimal solution of an optimization problem with respect to its parameters. This is critical for combining learning-based methods (neural networks, RL) with model predictive control (MPC), where one needs to backpropagate through an optimization solver.
+The benchmark studies how to compute **solution sensitivities** for parameterized optimal control problems. In this setting, the cost, dynamics, or constraints depend on a parameter vector `theta`, and the goal is to determine how the optimal trajectory or first control action changes when `theta` changes.
 
-The challenge is: given an optimal control problem (OCP) of the form:
-```
-minimize cost(x, u; θ)
-subject to dynamics(x, u; θ) = 0
-          inequality constraints(x, u; θ) ≤ 0
-```
-where θ are parameters, compute ∂solution/∂θ efficiently.
+This matters because many control-and-learning systems need gradients through an optimizer. If those gradients are inaccurate, unstable near constraint changes, or too slow to compute, the surrounding learning system becomes unreliable or unusable in practice.
 
-This is hard because:
-1. The solution involves solving an NLP with inequality constraints
-2. At constraint boundaries, the solution map can be nondifferentiable (kinks)
-3. Computing exact sensitivities requires the exact Hessian, not just an approximation
-4. Existing methods (mpc.pytorch, cvxpygen) are either slow, limited to simple problem forms, or give wrong sensitivities
+The benchmark therefore asks for methods that can handle nonlinear optimal control problems with constraints while still producing useful derivatives of the optimizer output with respect to problem parameters.
 
-## Why It Matters
+## Why It Is Difficult
 
-Parametric solution sensitivities are a key building block for:
-- Differentiable MPC layers in neural networks
-- Learning-enhanced MPC (learning system models, costs, or policies)
-- Imitation learning from MPC demonstrations
-- Real-time MPC with online adaptation
+The task is challenging for three reasons:
 
-Without efficient and accurate sensitivity computation, learning-enhanced control cannot achieve the necessary real-time performance, especially on embedded platforms.
+1. The optimization problems are constrained and can become nonsmooth when the active set changes.
+2. The parameter can affect several parts of the problem at once, including dynamics, costs, and inequalities.
+3. A usable method must balance two goals at the same time: sensitivity accuracy and runtime efficiency.
 
 ## Success Criteria
 
-A successful solution must:
-1. **Solve general NLPs**: Support nonlinear cost, nonlinear dynamics, and nonlinear inequality constraints — not just quadratic costs with simple bounds
-2. **Compute accurate sensitivities**: Solution sensitivities should match finite-difference baselines
-3. **Handle nondifferentiability gracefully**: At active-set changes, provide correct smoothed sensitivities
-4. **Be computationally efficient**: Meet or exceed the speed of specialized solvers (3x+ speedup over prior art)
-5. **Support both forward and adjoint modes**: Forward for few parameters, adjoint for backpropagation through networks
+A strong solution for this benchmark should satisfy all of the following:
+
+1. **Accurate sensitivities**: The reported local sensitivities should agree closely with finite-difference reference values on the nonlinear pendulum benchmark.
+2. **Constraint-aware behavior**: The method should remain meaningful near regions where constraints switch activity.
+3. **Practical efficiency**: On the batched bounded-LQR timing benchmarks, solve-plus-sensitivity time should remain low enough to support differentiable control use cases.
+4. **Reusable output**: The method must produce results in the format expected by the workspace evaluator so that different approaches can be compared fairly.

@@ -1,60 +1,45 @@
 # Evaluation
 
-How success is measured. Describe only the metrics, targets, and evaluation procedure — do NOT describe the paper's method or how they achieved these results. Think of this as a general evaluation protocol for other scientists trying to solve the same problem, where they should not see this paper's solution.
+## Overview
+
+The workspace evaluates candidate methods on one accuracy-focused experiment and two efficiency-focused experiments. All methods are judged by the same output contract in `scoring/scores.json`.
 
 ## Metrics
 
-The paper evaluates on three dimensions:
-
 ### 1. Sensitivity Accuracy
-- **Metric**: Comparison of computed sensitivities against finite-difference (FD) baselines
-- **How computed**: For the highly-parametric OCP, compute ∂u₀*(θ)/∂θ via the method and via finite differences. Report max absolute error.
-- **Direction**: Lower error is better (0 = exact match)
 
-### 2. Computational Efficiency (Timing)
-- **Metric**: Wall-clock time in milliseconds for solving N batch problems and computing sensitivities
-- **How computed**: Time to solve n_batch = 128 bounded LQR problems with N=20, nx=8, nu=4, nθ=248 parameters
-- **Comparison**: Reported as speedup factor relative to baseline solvers (mpc.pytorch, cvxpygen/OSQP)
-- **Direction**: Lower time is better; speedup > 1 means faster than baseline
+- **Experiment**: `pendulum_sensitivity_accuracy`
+- **Quantity measured**: Maximum absolute difference between the method's reported local sensitivity and a finite-difference reference on a parameterized pendulum optimal control problem.
+- **Direction**: Lower is better.
+- **Purpose**: This is the primary scientific target. It checks whether the method produces trustworthy local sensitivities on a nonlinear constrained problem.
 
-### 3. Adjoint Sensitivity Efficiency
-- **Metric**: Time for adjoint sensitivity computation vs. full forward Jacobian computation
-- **How computed**: Chain-of-masses example with N=40, nx=9, nu=3, nθ=113
-- **Direction**: Lower time is better; adjoint should be faster than forward for single-adjoint queries
+### 2. Solve-Plus-Sensitivity Runtime
 
-## Baselines and Targets
-
-The paper compares against two state-of-the-art differentiable MPC solvers:
-
-| Solver | Description | Paper's Reported Speedup |
-|--------|-------------|------------------------|
-| mpc.pytorch | iLQR-based differentiable MPC | acados 3.6x–520x faster |
-| cvxpygen/OSQP | Code-generated QP layers | acados 19x–160x faster |
-
-Key reference timings (acados):
-- Bounded LQR nominal solution: 8.5ms (u_max=10⁴), 17.6ms (u_max=1.0)
-- Bounded LQR with adjoint sensitivity: 34.5ms (u_max=10⁴), 42.0ms (u_max=1.0)
-- Chain example single adjoint: ~0.6ms
+- **Experiments**: `bounded_lqr_umax_high`, `bounded_lqr_umax_low`
+- **Quantity measured**: Total wall-clock time in milliseconds to solve a batch of bounded linear-quadratic control problems and compute sensitivities.
+- **Direction**: Lower is better.
+- **Purpose**: These are efficiency benchmarks. They check whether the method remains practical when sensitivities must be computed repeatedly across many related problems.
 
 ## Evaluation Protocol
 
-### Experiment 1: Highly-Parametric OCP (Pendulum)
-- **Problem**: Cart-pole with parametric mass, N=50, nx=4, nu=1, nθ=1
-- **Test**: Compute sensitivities across θ ∈ [-1.5, 1.5] and compare to finite differences
-- **Pass criterion**: Max |error| < 10⁻² (or visual agreement with kinks at active-set changes)
+### Experiment 1: `pendulum_sensitivity_accuracy`
 
-### Experiment 2: Bounded LQR Benchmark
-- **Problem**: Linear-quadratic OCP with parametric A,B matrices and control bounds
-- **n_batch** = 128 random initial states
-- **Test**: Compare solution + adjoint sensitivity timing
-- **Pass criterion**: Correct solution convergence + reasonable timing
+- Use the benchmark's parameterized pendulum control problem.
+- Evaluate sensitivity quality against finite differences at the benchmark reference parameter.
+- Report `sensitivity_max_error`.
 
-### Experiment 3: Chain of Masses
-- **Problem**: Nonlinear OCP with chain of masses model, N=40, n_masses=3
-- **Test**: Compare forward vs adjoint sensitivity computation time
-- **Pass criterion**: Adjoint is ~2.5x faster than forward for single-adjoint query
+### Experiment 2: `bounded_lqr_umax_high`
 
-### General Protocol
-- All timing experiments should run on the same hardware (or clearly report hardware differences)
-- Report mean ± std over multiple batch runs
-- Sensitivity accuracy should be validated at multiple θ values, including near active-set change boundaries
+- Use the benchmark's batched bounded-LQR setting with a loose control bound.
+- Report `solve_and_sens_time_ms`.
+
+### Experiment 3: `bounded_lqr_umax_low`
+
+- Use the benchmark's batched bounded-LQR setting with a tight control bound.
+- Report `solve_and_sens_time_ms`.
+
+## Reporting Rules
+
+1. Use the same benchmark formulations and metric definitions as the packaged workspace.
+2. If hardware differs from the reproduction environment, report that difference clearly when interpreting runtime results.
+3. Do not substitute a different task while keeping the same experiment name.

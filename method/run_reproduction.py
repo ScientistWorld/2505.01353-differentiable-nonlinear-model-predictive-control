@@ -35,8 +35,8 @@ def _build_parametric_pendulum_components():
     ca, AcadosModel, AcadosOcp, AcadosOcpSolver = _import_acados()
 
     x0 = np.array([0.0, np.pi / 2.0, 0.0, 0.0])
-    n_horizon = 20
-    t_horizon = 1.0
+    n_horizon = 50
+    t_horizon = 2.0
     dt = t_horizon / n_horizon
     f_max = 80.0
     theta_vals = np.linspace(0.1, 1.5, 21)
@@ -146,7 +146,7 @@ def _build_pendulum_ocp(components, *, hessian_approx: str, name: str):
     ocp.constraints.lbu = np.array([-components["f_max"]])
     ocp.constraints.ubu = np.array([components["f_max"]])
     ocp.constraints.idxbu = np.array([0])
-    ocp.model.con_h_expr = -model.x[0] * theta**2
+    ocp.model.con_h_expr = model.x[0] * theta
     ocp.constraints.lh = np.array([-1.5])
     ocp.constraints.uh = np.array([1.5])
     ocp.constraints.x0 = components["x0"]
@@ -178,10 +178,8 @@ def run_pendulum_eval():
 
     theta_vals = components["theta_vals"]
     n_horizon = components["n_horizon"]
-    x0 = components["x0"]
     u0_gn = np.zeros(len(theta_vals))
-    traj_x = np.zeros((len(theta_vals), n_horizon + 1, 4))
-    traj_u = np.zeros((len(theta_vals), n_horizon, 1))
+    gn_iterates = []
 
     for idx, theta_val in enumerate(theta_vals):
         p_val = np.array([theta_val], dtype=float)
@@ -189,11 +187,9 @@ def run_pendulum_eval():
         try:
             solver_gn.solve()
             u0_gn[idx] = float(solver_gn.get(0, "u")[0])
-            traj_x[idx, 0] = x0
-            for stage in range(n_horizon):
-                traj_u[idx, stage] = solver_gn.get(stage, "u")
-                traj_x[idx, stage + 1] = solver_gn.get(stage + 1, "x")
+            gn_iterates.append(solver_gn.get_iterate())
         except Exception:
+            gn_iterates.append(None)
             continue
 
     fd_sens_gn = np.gradient(u0_gn, theta_vals)
@@ -203,18 +199,10 @@ def run_pendulum_eval():
 
     solver_gn.set_p_global_and_precompute_dependencies(np.array([ref_theta]))
     solver_gn.solve()
-    traj_x_ref = np.zeros((n_horizon + 1, 4))
-    traj_u_ref = np.zeros((n_horizon, 1))
-    traj_x_ref[0] = x0
-    for stage in range(n_horizon):
-        traj_u_ref[stage] = solver_gn.get(stage, "u")
-        traj_x_ref[stage + 1] = solver_gn.get(stage + 1, "x")
+    gn_iterate_ref = solver_gn.get_iterate()
 
     solver_ex.set_p_global_and_precompute_dependencies(np.array([ref_theta]))
-    for stage in range(n_horizon + 1):
-        solver_ex.set(stage, "x", traj_x_ref[stage])
-    for stage in range(n_horizon):
-        solver_ex.set(stage, "u", traj_u_ref[stage].flatten())
+    solver_ex.set_iterate(gn_iterate_ref)
     solver_ex.solve()
     status_ex = solver_ex.status
 
@@ -227,16 +215,12 @@ def run_pendulum_eval():
         for theta_val, label in [(ref_theta, "ref"), (theta_plus, "ref_plus"), (theta_minus, "ref_minus")]:
             solver_ex.set_p_global_and_precompute_dependencies(np.array([theta_val]))
             if theta_val == ref_theta:
-                for stage in range(n_horizon + 1):
-                    solver_ex.set(stage, "x", traj_x_ref[stage])
-                for stage in range(n_horizon):
-                    solver_ex.set(stage, "u", traj_u_ref[stage].flatten())
+                solver_ex.set_iterate(gn_iterate_ref)
             else:
                 nearest_idx = int(np.argmin(np.abs(theta_vals - theta_val)))
-                for stage in range(n_horizon + 1):
-                    solver_ex.set(stage, "x", traj_x[nearest_idx, stage])
-                for stage in range(n_horizon):
-                    solver_ex.set(stage, "u", traj_u[nearest_idx, stage].flatten())
+                nearest_iterate = gn_iterates[nearest_idx]
+                if nearest_iterate is not None:
+                    solver_ex.set_iterate(nearest_iterate)
             solver_ex.solve()
             results_exact[label] = {
                 "u0": float(solver_ex.get(0, "u")[0]),

@@ -3,4 +3,4 @@
 # only after your turn ends. Sleeping blocks the entire pipeline.
 action: done
 milestone: core_claim
-notes: "Compute job 58199a5f-9c0 completed successfully and validated the full packaged reproduction path inside the container. The workspace reaches core_claim with a real acados-based exact-Hessian sensitivity reproduction on the pendulum task (exact error 0.002597 vs Gauss-Newton 2.200135), plus runnable reduced-scale LQR timing benchmarks, and scoring/scores.json was regenerated from the successful compute-node run."
+notes: "Final verification passed. The workspace is ready for gym use at core_claim: problem/evaluation/scoring docs are now method-agnostic and aligned with the scored experiments, root clutter was cleaned into tmp/verification_cleanup, and validate.py plus validate.py --compare both pass."

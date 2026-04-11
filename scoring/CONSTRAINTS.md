@@ -1,20 +1,22 @@
 # Scientist Constraints
 
-## Problem Formulation
-The scientist must use the packaged workspace formulations below, which preserve the paper's method while matching the runnable environment:
-- **Pendulum**: Use the packaged formulation in `method/run_reproduction.py`: cart-pole system with `N=20`, `T=1.0`, `nx=4`, `nu=1`, `Fmax=80`, parametric state weighting, parametric cart-mass dynamics, and parametric inequality `-1.5 <= -p * theta^2 <= 1.5`. This is a reduced-scale but method-faithful version of the paper's Appendix A.10 setup.
-- **LQR**: Dense linear dynamics, `N=20`, `nx=8`, `nu=4`, parametric cost matrices. Two settings: `u_max=10^4` and `u_max=1.0`. The packaged benchmark uses `n_batch=128`.
+## Fixed Benchmark Problems
 
-Do not simplify, reduce, or reformulate the problems. The scientist may not reduce N, change Q/R matrices, or alter the constraint structure.
+Future scientists must keep the benchmark problem definitions fixed when claiming improvement on the existing experiment names:
 
-## Solver Infrastructure
-The scientist must use **acados** as the NLP solver backend. The contribution is the exact-Hessian parametric sensitivity computation in acados, not the underlying QP solver (HPIPM). Switching to a different MPC framework (e.g., MuJoCo MPC, OCS2, force, Crocoddyl) bypasses the paper's actual contribution.
+- `pendulum_sensitivity_accuracy`: same parameterized pendulum control problem, same horizon and time horizon, same finite-difference reference procedure, and the same reported metric `sensitivity_max_error`.
+- `bounded_lqr_umax_high`: same batched bounded-LQR problem dimensions, same loose control-bound setting, and the same reported metric `solve_and_sens_time_ms`.
+- `bounded_lqr_umax_low`: same batched bounded-LQR problem dimensions, same tight control-bound setting, and the same reported metric `solve_and_sens_time_ms`.
 
-## Sensitivity Computation Method
-For the pendulum sensitivity accuracy experiment, the scientist must compute parametric sensitivities via the **adjoint sensitivity method** applied to the KKT conditions of the nonlinear OCP (Implicit Function Theorem). Computing sensitivities by re-solving the OCP at perturbed parameters (brute-force reoptimization) is not the method — it is a fallback that does not demonstrate the algorithmic contribution.
+## Fair Comparison Rules
 
-## Compliance Checklist
-- [ ] Pendulum OCP uses the packaged reduced-scale formulation in `method/run_reproduction.py` with `N=20`, `T=1.0`, `nx=4`, `nu=1`, `Fmax=80`, parametric cost, dynamics, and inequality
-- [ ] LQR OCP uses `N=20`, `nx=8`, `nu=4`, parametric cost matrices, `u_max=10^4` or `u_max=1.0`, and `n_batch=128`
-- [ ] Uses acados NLP solver backend (not MuJoCo MPC, OCS2, force, Crocoddyl, etc.)
-- [ ] Sensitivity computed via adjoint method on KKT conditions, not brute-force reoptimization
+Scientists may improve the method, implementation, or numerical strategy, but they may not:
+
+- Rename a different task to one of the existing experiment names.
+- Reduce the benchmark dimensions, shorten the horizon, shrink the batch size, or loosen the problem while keeping the same score entry.
+- Replace the finite-difference reference in the pendulum experiment with a different accuracy target.
+- Report runtime for a materially different workload under the same LQR experiment name.
+
+## Output Contract
+
+Any competing method must still write `scoring/scores.json` with the same experiment names and metric names used by the packaged evaluator. New experiments may be added, but existing ones must remain comparable.

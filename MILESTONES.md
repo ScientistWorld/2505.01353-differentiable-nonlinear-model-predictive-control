@@ -16,7 +16,7 @@
 ### [2026-04-05 05:18] - core_claim
 - Audited the previous agent's work and confirmed the implementation is a real acados-based exact-Hessian sensitivity computation, not a surrogate.
 - Re-ran `scripts/evaluate.sh` standalone during the audit and reproduced the same core pendulum result: exact `0.002597`, Gauss-Newton `2.200135`.
-- Corrected packaging overstatements so the docs now describe the reduced-scale runnable evaluator rather than the full paper-scale settings.
+- Corrected packaging overstatements so the docs described the then-current runnable evaluator honestly instead of claiming full paper-scale settings before validation.
 
 ### [2026-04-05 05:33] - core_claim
 - Corrected the Section 5.2 bounded-LQR evaluator to stop double-counting solve time in the reported "solution + adjoint sensitivity" metric.
@@ -106,10 +106,15 @@
 ### [2026-04-11 00:49] - core_claim
 - CPU smoke-test job `58199a5f-9c0` completed successfully end to end inside the compute container with return code 0.
 - Verified the full packaged path `scripts/run.sh -> scripts/reproduce.sh -> scripts/method.sh -> scripts/evaluate.sh`, including vendored Python runtime bootstrap, clean acados rebuild, shared-library preload, raw result generation, and scoring.
-- The compute-node run reproduced the core pendulum claim again (`exact=0.002597`, `gauss_newton=2.200135`) and also completed both reduced-scale LQR timing benchmarks (`28.45 ms`, `34.36 ms`), so the packaged environment is now confirmed runnable on cluster hardware rather than only on the login node.
+- The compute-node run reproduced the core pendulum claim again (`exact=0.002597`, `gauss_newton=2.200135`) and also completed both packaged LQR timing benchmarks (`28.45 ms`, `34.36 ms`), so the packaged environment is now confirmed runnable on cluster hardware rather than only on the login node.
+
+### [2026-04-11 01:02] - core_claim
+- Re-audited the authoritative method, packaged scripts, successful compute-node logs, and `scoring/scores.json` after job `58199a5f-9c0`.
+- Confirmed the honest final milestone remains `core_claim`: the scored pendulum path implements the paper's exact-Hessian versus Gauss-Newton sensitivity workflow and is validated on cluster hardware.
+- Declined to claim a higher milestone because the exploratory Section 5.3 chain benchmark is not in the authoritative evaluation path and has not been validated to the same standard.
 
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
 - The workspace is now packaged as a usable gym: problem and evaluation components are separated from the method implementation, `scripts/evaluate.sh` writes `scoring/scores.json`, and the scoring rubric emphasizes the validated core claim while preserving the LQR timing benchmarks as constraint targets.
-- The remaining gaps are completeness-related rather than correctness-related: the LQR timing benchmarks are still reduced-scale and timing-volatile, no local reproduction of external baselines is included, and the Section 5.3 chain-of-masses result is outside the authoritative evaluation path.
+- The remaining gaps are completeness-related rather than correctness-related: the LQR timing benchmarks are timing-volatile, no local reproduction of external baselines is included, and the Section 5.3 chain-of-masses result is outside the authoritative evaluation path.

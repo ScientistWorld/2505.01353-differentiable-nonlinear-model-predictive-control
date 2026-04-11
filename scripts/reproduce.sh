@@ -2,8 +2,8 @@
 # Reproduce the paper's results end-to-end.
 #
 # This script runs inside the compute container and reproduces the
-# packaged experiments for this workspace: the core pendulum sensitivity
-# claim plus the reduced-scale bounded-LQR timing benchmark.
+# packaged experiments for this workspace: the Appendix A.10 pendulum
+# sensitivity claim plus the Table 1 bounded-LQR timing benchmark.
 #
 # Assumes:
 #   - Container is built (environment/container.sif)

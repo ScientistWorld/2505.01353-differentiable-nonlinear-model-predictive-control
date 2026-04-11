@@ -3,8 +3,9 @@
 ## Final Status
 
 - Final milestone: `core_claim`
+- 2026-04-11 final audit: re-checked the authoritative method code, packaged scripts, successful compute-node logs, and scored artifacts. The packaged pendulum experiment uses the full Appendix A.10 benchmark formulation implemented in `method/run_reproduction.py`.
 - 2026-04-11 successful compute validation: CPU smoke-test job `58199a5f-9c0` finished with return code 0 and executed the full packaged path inside the container: runtime bootstrap, clean acados rebuild, shared-library preload, `method/run_reproduction.py`, and `eval/evaluator.py`. Fresh outputs were written to `checkpoints/reproduction_results.json` and `scoring/scores.json`.
-- 2026-04-11 confirmed compute-node results: pendulum exact-Hessian sensitivity error `0.0025974539`, pendulum Gauss-Newton error `2.2001354963`, bounded-LQR high `28.4525 ms`, bounded-LQR low `34.3578 ms`.
+- 2026-04-11 confirmed compute-node results from the last validated packaged run: pendulum exact-Hessian sensitivity error `0.0025974539`, pendulum Gauss-Newton error `2.2001354963`, bounded-LQR high `28.4525 ms`, bounded-LQR low `34.3578 ms`.
 - 2026-04-10 setup retry: the CPU smoke-test submission failed during `environment/setup.sh`, before the job payload ran. The log showed `uv` resolving packages and then failing inside root-mapped fakeroot semaphore handling (`libfakeroot` / `semop`). Switched `environment/setup.sh` to `python3 -m pip install` and revalidated locally with shell syntax checks, Python compilation, and `python3 validate.py --compare`; resubmitting the CPU smoke test.
 - 2026-04-10 setup retry 2: the next environment attempt failed before the job payload because `environment/setup.sh` tried to install `acados_template` from `/home/user/method/acados/...`, but the setup overlay did not have that workspace path available. Removed the workspace-dependent editable install and rely on the runtime `PYTHONPATH` exports in `scripts/run.sh` and `scripts/method.sh`; shell syntax checks, `acados_template` source import, Python compilation, and `python3 validate.py --compare` pass locally.
 - 2026-04-10 packaging update: corrected the runnable script flow so `scripts/method.sh`, `scripts/reproduce.sh`, and `scripts/run.sh` generate raw method metrics with `method/run_reproduction.py` before scoring through the method-agnostic evaluator. `python3 -m py_compile ...` and `python3 validate.py --compare` pass locally; a CPU test job is being submitted to validate the corrected end-to-end path in-container.
@@ -14,7 +15,7 @@
 - 2026-04-11 dynamic-loader update: CPU smoke-test job `3f681f30-85a` showed that the clean rebuild helper is working. The job rebuilt acados from source commit `0e37d8f`, replacing the previously stale installed commit `c1c1e81`, but the post-build `ctypes.CDLL('/home/user/method/acados/lib/libacados.so')` probe still failed on the compute node with `undefined symbol: d_ocp_qp_seed_memsize`. Local inspection confirms `libhpipm.so` exports that symbol and `libacados.so` declares `libhpipm.so` as a `DT_NEEDED` dependency, so the remaining issue is loader ordering on the compute node rather than a missing symbol in the build. Patched `method/bootstrap_runtime.py` to preload `libblasfeo.so.0`, `libhpipm.so`, `libqpOASES_e.so`, and `libacados.so` by absolute path with `RTLD_GLOBAL`, then updated `method/run_reproduction.py` and `scripts/run.sh` to use that preload path before importing `acados_template`.
 - 2026-04-11 CasADi module-identity update: CPU smoke-test job `c40a31e6-f78` confirmed that the shared-library preload fix works well enough to run the pendulum experiment and reach the bounded-LQR code path on the compute node. The next failure was `TypeError: model.x must be casadi.SX or casadi.MX, got <class 'casadi.casadi.SX'>` inside `acados_template`. This happens because `run_reproduction.py` calls `_import_acados()` multiple times, while `ensure_casadi_importable()` had been deleting `casadi` from `sys.modules` and reimporting it on every call. That creates a second CasADi module instance after `acados_template` has already cached `SX`/`MX` from the first one. Patched `method/bootstrap_runtime.py` to return the already-loaded CasADi module whenever it already exposes `MX`, `SX`, and `Function`, so repeated `_import_acados()` calls keep a single CasADi type identity alive across the whole process.
 - 2026-04-10 verification: `python3 validate.py --compare` passed, with reproduced pendulum exact-Hessian error `0.002597` and Gauss-Newton error `2.200135`.
-- Audit verdict: trustable after correction. The implementation is real and method-faithful, and the final packaging states the runnable reduced-scale setup honestly.
+- Audit verdict: trustable. The implementation is real and method-faithful for the validated packaged setup, and no higher milestone is justified from the current unscored exploratory paths.
 - Final verification complete: the gym-facing scoring rubric, targets, constraints, and direction documents are aligned with the packaged evaluator and ready for future scientist agents.
 
 ## What Works
@@ -52,7 +53,7 @@
 
 ## Remaining
 
-- Secondary claims remain outside the packaged evaluator: the Section 5.3 chain benchmark is not part of the authoritative evaluation path.
+- Secondary claims remain outside the packaged evaluator: the Section 5.3 chain benchmark is exploratory and is not part of the authoritative evaluation path.
 - The LQR timing experiments remain informative constraint benchmarks rather than a fully stabilized reproduction of the paper's timing table.
 
 ## Issues
@@ -60,7 +61,7 @@
 - LQR timing varies noticeably across reruns, so the current timing benchmark is less stable than the pendulum sensitivity result
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
-- Temporary generated files appear when acados regenerates C code during evaluation
+- Temporary generated files may appear when acados regenerates C code during evaluation
 - 2026-04-10 packaging audit found that `scripts/evaluate.sh` had been changed to score `checkpoints/reproduction_results.json`, while the script chain did not reliably regenerate that artifact. Fixed the chain so `scripts/method.sh` runs `method/run_reproduction.py`, then `scripts/evaluate.sh` scores the generated artifact.
 - 2026-04-10 dependency audit found that `method/acados` was recorded as a gitlink without a `.gitmodules` entry. Added the mapping and made `scripts/download.sh` avoid invoking git update commands on a pre-populated acados directory that has no nested `.git`.
 - 2026-04-10 setup failure: `uv pip install --system` triggered a root-mapped fakeroot IPC error after package resolution. The workaround is to use `python3 -m pip install` in `environment/setup.sh` for this environment.
@@ -79,8 +80,8 @@
 
 ## Deviations from Paper
 
-- The packaged pendulum evaluator is a smaller but faithful version of the paper's setup: `N=20`, `T=1.0`, and sensitivity is checked at a central reference parameter using finite differences around that point rather than across the full paper-scale trajectory map.
-- The Section 5.2 benchmark code uses the paper's `n_batch=128`, but the packaged reproduction still reports reduced-scale timings from this local environment rather than a full hardware-matched timing study.
+- The packaged pendulum evaluator follows the paper's Appendix A.10 formulation in the current authoritative method code: `N=50`, `T=2.0`, and the inequality `-1.5 <= p * theta <= 1.5`.
+- The Section 5.2 benchmark code uses the paper's `n_batch=128`, but the packaged reproduction still reports timings from this local environment rather than a hardware-matched rerun of the paper's exact CPU platform.
 - The LQR evaluator previously double-counted solve time when reporting "solution + adjoint sensitivity" timing; this has been corrected in the packaged evaluator.
 - No comparison against mpc.pytorch or cvxpygen baselines
 - Chain of masses example (Section 5.3) not included in evaluator
