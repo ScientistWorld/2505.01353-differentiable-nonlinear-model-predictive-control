@@ -74,18 +74,17 @@ PY
 
 echo ""
 echo ">>> Rebuilding acados in Release mode..."
-mkdir -p "${ACADOS_SOURCE_DIR}/build"
-cd "${ACADOS_SOURCE_DIR}/build"
-cmake -DACADOS_WITH_QPOASES=ON \
-      -DACADOS_WITH_OSQP=OFF \
-      -DACADOS_WITH_HPIPM=ON \
-      -DBUILD_SHARED_LIBS=ON \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DACADOS_EXTERNAL_HPMPC=OFF \
-      ..
-make install -j"$(nproc)"
+bash /home/user/scripts/build_acados.sh
 
-cd /home/user
+echo ""
+echo ">>> Verifying acados shared-library linkage..."
+python3 - <<'PY'
+import ctypes
+
+lib_path = "/home/user/method/acados/lib/libacados.so"
+ctypes.CDLL(lib_path)
+print(f"ctypes_loaded={lib_path}")
+PY
 
 echo ""
 echo ">>> Running reproduction and evaluation..."

@@ -88,6 +88,11 @@
 - Patched `method/bootstrap_runtime.py` to restrict autodiscovery to the active interpreter version, preserve the job's `PYTHONPATH` ordering, and report the exact exception and traceback for each attempted CasADi root.
 - Updated `scripts/run.sh` to print `python3` version details, leading `sys.path`, and the detailed bootstrap failure before aborting. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` all pass before the next CPU smoke test.
 
+### [2026-04-11 00:10] - core_claim
+- CPU smoke-test job `a4a57e9d-0d9` passed the CasADi runtime bootstrap and rebuilt acados, which confirms the vendored Python runtime path now works on the compute node.
+- The new failure moved into acados shared-library loading: `libacados.so` raised `undefined symbol: d_ocp_qp_seed_memsize` inside `AcadosOcpSolver`, while the installed library stamp still reported acados commit `c1c1e81` even though the source tree is at `530daae`.
+- Added `scripts/build_acados.sh` and switched both `scripts/run.sh` and `scripts/download.sh` to use it so every build starts from a clean acados build/install state. `scripts/run.sh` now also performs a direct `ctypes.CDLL` load check on `libacados.so` before launching the method.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

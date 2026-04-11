@@ -57,16 +57,7 @@ fi
 
 # Build acados as shared library
 echo "Building acados..."
-mkdir -p "${ACADOS_DIR}/build"
-cd "${ACADOS_DIR}/build"
-cmake -DACADOS_WITH_QPOASES=ON \
-      -DACADOS_WITH_OSQP=OFF \
-      -DACADOS_WITH_HPIPM=ON \
-      -DBUILD_SHARED_LIBS=ON \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DACADOS_EXTERNAL_HPMPC=OFF \
-      ..
-make install -j$(nproc)
+bash /home/user/scripts/build_acados.sh
 
 echo "acados build complete."
 echo "Library: ${ACADOS_DIR}/lib/"

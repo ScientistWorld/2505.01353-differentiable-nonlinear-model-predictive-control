@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: core_claim
-notes: "CPU smoke test after job f1d36739-10c exposed that the CasADi runtime bootstrap still probed stale python3.12 user-site paths and hid the real import failure. method/bootstrap_runtime.py now restricts discovery to the active interpreter version and reports per-root exceptions; scripts/run.sh also prints python version and sys.path context. Local shell syntax checks, Python compilation, and validate.py --compare passed at 2026-04-10 23:55 UTC."
+notes: "CPU smoke test after job a4a57e9d-0d9 passed the vendored CasADi import path but failed loading libacados.so with undefined symbol d_ocp_qp_seed_memsize. The installed acados libraries were stale relative to the checked-out source commit, so scripts/build_acados.sh now wipes the old build/install artifacts before rebuilding, and scripts/run.sh performs a direct ctypes.CDLL linkage check on libacados.so before starting the method. Local shell syntax checks, Python compilation, and validate.py --compare passed at 2026-04-11 00:10 UTC."
