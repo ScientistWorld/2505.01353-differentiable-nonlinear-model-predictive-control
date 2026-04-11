@@ -98,6 +98,11 @@
 - The remaining failure is now isolated to dynamic loading on the compute node: the fresh `libacados.so` still failed `ctypes.CDLL(...)` with `undefined symbol: d_ocp_qp_seed_memsize`, even though `libhpipm.so` exports that symbol and `libacados.so` lists `libhpipm.so` as a dependency.
 - Patched the runtime bootstrap to preload `libblasfeo.so.0`, `libhpipm.so`, `libqpOASES_e.so`, and `libacados.so` by absolute path with `RTLD_GLOBAL` before importing `acados_template`. `scripts/run.sh` now uses the same preload path in its preflight check.
 
+### [2026-04-11 00:36] - core_claim
+- CPU smoke-test job `c40a31e6-f78` passed the shared-library preload workaround and progressed through the pendulum experiment into the bounded-LQR path, so the compute-node `libacados.so` loading issue is now effectively mitigated.
+- The new failure is a pure Python/CasADi module-identity bug: during the later LQR setup, `acados_template` rejected `model.x` with `TypeError: model.x must be casadi.SX or casadi.MX, got <class 'casadi.casadi.SX'>`.
+- Root cause: `ensure_casadi_importable()` was force-removing `casadi` from `sys.modules` on every call, so repeated `_import_acados()` calls in `run_reproduction.py` created a second CasADi module instance while `acados_template` still held `SX`/`MX` from the first one. Patched the bootstrap to reuse an already-valid CasADi module instead of reimporting it.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.

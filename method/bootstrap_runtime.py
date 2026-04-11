@@ -70,6 +70,11 @@ def ensure_casadi_importable():
     ahead of the actual wheel. acados_template expects the real package with
     `MX`, `SX`, and `Function`.
     """
+    existing = sys.modules.get("casadi")
+    required = ("MX", "SX", "Function")
+    if existing is not None and all(hasattr(existing, name) for name in required):
+        return existing
+
     for module_name in ("casadi", "casadi.casadi"):
         sys.modules.pop(module_name, None)
 
@@ -92,7 +97,6 @@ def ensure_casadi_importable():
                 f"{traceback.format_exc(limit=3)}"
             )
             continue
-        required = ("MX", "SX", "Function")
         if all(hasattr(casadi, name) for name in required):
             return casadi
         sys.modules.pop("casadi", None)
