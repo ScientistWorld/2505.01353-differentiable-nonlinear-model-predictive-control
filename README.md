@@ -282,6 +282,36 @@ Key reference timings (acados):
 - Updated `environment/setup.sh` to force-reinstall pinned runtime wheels and validate that `casadi.MX`, `casadi.SX`, and `casadi.Function` are available during setup.
 - Local shell syntax checks, Python compilation, and `python3 validate.py --compare` pass. Resubmitting the CPU smoke test.
 
+### [2026-04-10 22:56] - core_claim
+- Hardened the compute runtime against the broken namespace-style `casadi` import seen in job `07c40127-2b3`.
+- Updated `scripts/run.sh`, `scripts/reproduce.sh`, `scripts/method.sh`, and `scripts/evaluate.sh` to set `PYTHONNOUSERSITE=1`, report the resolved `casadi` import path, and use the unpacked Python 3.10 wheel under `environment/vendor_py310/` as a fallback runtime package source.
+- Re-ran local shell syntax checks, Python compilation, and `python3 validate.py --compare`; all passed. Resubmitting the CPU smoke test with the runtime import fix.
+
+### [2026-04-10 23:02] - core_claim
+- Extended the runtime fallback from CasADi-only to all required binary/runtime Python packages by vendoring CPython 3.10 wheels for `casadi`, `numpy`, `scipy`, and `deprecated` into `environment/vendor_py310/`.
+- Updated `scripts/download.sh` to materialize those wheels on the login node and simplified `environment/setup.sh` to a no-op so compute jobs no longer depend on overlay-time pip behavior.
+- Local checks pass: shell syntax, bootstrap CasADi import, and `python3 validate.py --compare`. Submitting another CPU smoke test for the fully vendored runtime path.
+
+### [2026-04-10 23:55] - core_claim
+- CPU smoke-test job `f1d36739-10c` still failed in the runtime preflight, but the failure narrowed to `method/bootstrap_runtime.py`: it kept probing `/home/user/.local/lib/python3.12/site-packages` and then swallowed the real CasADi import exception from the vendored runtime.
+- Patched `method/bootstrap_runtime.py` to restrict autodiscovery to the active interpreter version, preserve the job's `PYTHONPATH` ordering, and report the exact exception and traceback for each attempted CasADi root.
+- Updated `scripts/run.sh` to print `python3` version details, leading `sys.path`, and the detailed bootstrap failure before aborting. Local shell syntax checks, Python compilation, and `python3 validate.py --compare` all pass before the next CPU smoke test.
+
+### [2026-04-11 00:10] - core_claim
+- CPU smoke-test job `a4a57e9d-0d9` passed the CasADi runtime bootstrap and rebuilt acados, which confirms the vendored Python runtime path now works on the compute node.
+- The new failure moved into acados shared-library loading: `libacados.so` raised `undefined symbol: d_ocp_qp_seed_memsize` inside `AcadosOcpSolver`, while the installed library stamp still reported acados commit `c1c1e81` even though the source tree is at `530daae`.
+- Added `scripts/build_acados.sh` and switched both `scripts/run.sh` and `scripts/download.sh` to use it so every build starts from a clean acados build/install state. `scripts/run.sh` now also performs a direct `ctypes.CDLL` load check on `libacados.so` before launching the method.
+
+### [2026-04-11 00:22] - core_claim
+- CPU smoke-test job `3f681f30-85a` confirmed the clean rebuild path is taking effect: the job rebuilt acados from source commit `0e37d8f` and replaced the stale installed commit `c1c1e81`.
+- The remaining failure is now isolated to dynamic loading on the compute node: the fresh `libacados.so` still failed `ctypes.CDLL(...)` with `undefined symbol: d_ocp_qp_seed_memsize`, even though `libhpipm.so` exports that symbol and `libacados.so` lists `libhpipm.so` as a dependency.
+- Patched the runtime bootstrap to preload `libblasfeo.so.0`, `libhpipm.so`, `libqpOASES_e.so`, and `libacados.so` by absolute path with `RTLD_GLOBAL` before importing `acados_template`. `scripts/run.sh` now uses the same preload path in its preflight check.
+
+### [2026-04-11 00:36] - core_claim
+- CPU smoke-test job `c40a31e6-f78` passed the shared-library preload workaround and progressed through the pendulum experiment into the bounded-LQR path, so the compute-node `libacados.so` loading issue is now effectively mitigated.
+- The new failure is a pure Python/CasADi module-identity bug: during the later LQR setup, `acados_template` rejected `model.x` with `TypeError: model.x must be casadi.SX or casadi.MX, got <class 'casadi.casadi.SX'>`.
+- Root cause: `ensure_casadi_importable()` was force-removing `casadi` from `sys.modules` on every call, so repeated `_import_acados()` calls in `run_reproduction.py` created a second CasADi module instance while `acados_template` still held `SX`/`MX` from the first one. Patched the bootstrap to reuse an already-valid CasADi module instead of reimporting it.
+
 ## Stop Justification
 
 - Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
