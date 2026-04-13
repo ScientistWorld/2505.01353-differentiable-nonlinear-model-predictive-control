@@ -1,3 +1,0 @@
-[submodule "method/acados"]
-	path = method/acados
-	url = https://github.com/acados/acados.git
