@@ -3,4 +3,4 @@
 # only after your turn ends. Sleeping blocks the entire pipeline.
 action: done
 milestone: core_claim
-notes: "Final verification passed. The workspace is ready for gym use at core_claim: problem/evaluation/scoring docs are now method-agnostic and aligned with the scored experiments, root clutter was cleaned into tmp/verification_cleanup, and validate.py plus validate.py --compare both pass."
+notes: "Fixed download.sh to fetch a valid public t_renderer asset and pin the acados fallback clone to the recorded commit."

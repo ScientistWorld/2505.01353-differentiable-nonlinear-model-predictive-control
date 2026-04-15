@@ -15,6 +15,7 @@ set -e
 cd /home/user
 
 ACADOS_DIR="/home/user/method/acados"
+ACADOS_COMMIT="e7c893412f9e3ae9e7d9a1c5fdd1da9003f106c2"
 
 # Check if acados is already available. Some benchmark workspaces contain a
 # pre-populated source tree without a nested .git directory, so only run git
@@ -32,7 +33,10 @@ else
     git submodule update --init --recursive method/acados || {
         echo "Submodule init failed; cloning acados repository directly..."
         rm -rf "${ACADOS_DIR}"
-        git clone --recursive https://github.com/acados/acados.git "${ACADOS_DIR}"
+        git clone https://github.com/acados/acados.git "${ACADOS_DIR}"
+        cd "${ACADOS_DIR}"
+        git checkout "${ACADOS_COMMIT}"
+        git submodule update --init --recursive
     }
     cd "${ACADOS_DIR}"
 fi
@@ -41,11 +45,12 @@ fi
 mkdir -p "${ACADOS_DIR}/bin"
 ARCH=$(uname -m)
 case "${ARCH}" in
-    x86_64) TERA_ARCH="linux64" ;;
+    x86_64) TERA_ARCH="linux-amd64" ;;
     aarch64) TERA_ARCH="linux-arm64" ;;
     *) echo "Unknown architecture: ${ARCH}"; exit 1 ;;
 esac
-TERA_URL="https://github.com/acados/tera_renderer/releases/download/v0.0.41/t_renderer_${TERA_ARCH}"
+TERA_VERSION="v0.2.0"
+TERA_URL="https://github.com/acados/tera_renderer/releases/download/${TERA_VERSION}/t_renderer-${TERA_VERSION}-${TERA_ARCH}"
 if [ ! -f "${ACADOS_DIR}/bin/t_renderer" ]; then
     echo "Downloading t_renderer..."
     curl -sSL "${TERA_URL}" -o "${ACADOS_DIR}/bin/t_renderer"
