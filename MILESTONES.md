@@ -114,7 +114,4 @@
 - Declined to claim a higher milestone because the exploratory Section 5.3 chain benchmark is not in the authoritative evaluation path and has not been validated to the same standard.
 
 ## Stop Justification
-
-- Stopping at `core_claim` is justified because the paper's central qualitative result is reproduced and verified in this workspace: exact-Hessian sensitivities closely match finite differences while the Gauss-Newton approximation is materially worse on the same pendulum OCP.
-- The workspace is now packaged as a usable gym: problem and evaluation components are separated from the method implementation, `scripts/evaluate.sh` writes `scoring/scores.json`, and the scoring rubric emphasizes the validated core claim while preserving the LQR timing benchmarks as constraint targets.
-- The remaining gaps are completeness-related rather than correctness-related: the LQR timing benchmarks are timing-volatile, no local reproduction of external baselines is included, and the Section 5.3 chain-of-masses result is outside the authoritative evaluation path.
+- Completed at milestone `core_claim`.
