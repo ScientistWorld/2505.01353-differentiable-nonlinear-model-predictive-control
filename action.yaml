@@ -2,5 +2,5 @@
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends. Sleeping blocks the entire pipeline.
 action: done
-milestone: core_claim
-notes: "Fixed download.sh to fetch a valid public t_renderer asset and pin the acados fallback clone to the recorded commit."
+gpus: 0
+notes: "Train keeps original paper metrics; held-out test adds 4 consistency metrics from the same checkpoint. Existing reproduction gap is small: tight/loose runtime ratio 1.21 and log10 exact-vs-GN sensitivity advantage 2.93."

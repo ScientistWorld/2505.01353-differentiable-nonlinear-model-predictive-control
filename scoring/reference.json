@@ -6,6 +6,7 @@
       "primary_metric": "solve_and_sens_time_ms",
       "metrics": {
         "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0},
+        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": -0.4, "description": "Solve-plus-sensitivity time normalized by the 128-problem batch size, catching methods that report batch totals inconsistently."},
         "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.5},
         "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.5}
       },
@@ -36,6 +37,8 @@
       "primary_metric": "solve_and_sens_time_ms",
       "metrics": {
         "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0},
+        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": -0.4, "description": "Solve-plus-sensitivity time normalized by the 128-problem batch size under the tight control bound."},
+        "tight_to_loose_runtime_ratio": {"higher_is_better": false, "coefficient": -0.3, "description": "Runtime under the tight bound divided by loose-bound runtime, checking that efficiency is not tuned only to the easier loose-bound case."},
         "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.5},
         "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.5}
       },
@@ -65,7 +68,8 @@
       "weight": 0.6,
       "primary_metric": "sensitivity_max_error",
       "metrics": {
-        "sensitivity_max_error": {"higher_is_better": false, "coefficient": -1.0}
+        "sensitivity_max_error": {"higher_is_better": false, "coefficient": -1.0},
+        "log10_sensitivity_advantage_vs_gn": {"higher_is_better": true, "coefficient": 0.4, "description": "Log10 ratio of Gauss-Newton sensitivity error to exact-Hessian error, preserving the paper's claim that exact second-order sensitivities outperform the Gauss-Newton shortcut."}
       },
       "results": {
         "acados_exact_hessian": {
