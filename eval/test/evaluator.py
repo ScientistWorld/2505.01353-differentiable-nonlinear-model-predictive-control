@@ -82,6 +82,7 @@ def _test_scores(scores: dict) -> dict:
     )
 
     log10_advantage = math.log10((gn_err + EPS) / (exact_err + EPS))
+    log10_gn_vs_exact = math.log10((gn_err + EPS) / (exact_err + EPS))
     tight_to_loose_ratio = low_time / max(high_time, EPS)
 
     return {
@@ -90,6 +91,7 @@ def _test_scores(scores: dict) -> dict:
                 "results": {
                     "acados_exact_hessian": {
                         "log10_sensitivity_advantage_vs_gn": log10_advantage,
+                        "log10_gn_vs_exact_ratio": log10_gn_vs_exact,
                     },
                     "gauss_newton_approx": {
                         "sensitivity_max_error": gn_err,

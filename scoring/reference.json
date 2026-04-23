@@ -69,7 +69,8 @@
       "primary_metric": "sensitivity_max_error",
       "metrics": {
         "sensitivity_max_error": {"higher_is_better": false, "coefficient": -1.0},
-        "log10_sensitivity_advantage_vs_gn": {"higher_is_better": true, "coefficient": 0.4, "description": "Log10 ratio of Gauss-Newton sensitivity error to exact-Hessian error, preserving the paper's claim that exact second-order sensitivities outperform the Gauss-Newton shortcut."}
+        "log10_sensitivity_advantage_vs_gn": {"higher_is_better": true, "coefficient": 0.4, "description": "Log10 ratio of Gauss-Newton sensitivity error to exact-Hessian error, preserving the paper's claim that exact second-order sensitivities outperform the Gauss-Newton shortcut."},
+        "log10_gn_vs_exact_ratio": {"higher_is_better": true, "coefficient": 0.4, "description": "Symmetric comparative metric for the baseline: log10(GN error / exact error). Higher means GN is closer to exact (the baseline is more competitive). Balances the test slice by giving the baseline method its own comparative metric."}
       },
       "results": {
         "acados_exact_hessian": {
