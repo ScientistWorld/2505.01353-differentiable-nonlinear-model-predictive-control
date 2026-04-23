@@ -53,7 +53,42 @@ for experiment_name in sorted(train_experiments):
     if not train_methods:
         raise SystemExit(f"No methods scored for {experiment_name}")
 
+    for method_name in sorted(train_methods):
+        train_metrics = train["experiments"][experiment_name]["results"][method_name]
+        test_metrics = test["experiments"][experiment_name]["results"][method_name]
+
+        if not train_metrics or not test_metrics:
+            raise SystemExit(
+                f"Empty metric payload for {experiment_name}/{method_name}: "
+                f"train={train_metrics} test={test_metrics}"
+            )
+
+        for split_name, split_metrics in (("train", train_metrics), ("test", test_metrics)):
+            for metric_name, metric_value in split_metrics.items():
+                if metric_value is None:
+                    raise SystemExit(
+                        f"Null metric in {split_name}: "
+                        f"{experiment_name}/{method_name}/{metric_name}"
+                    )
+                if not isinstance(metric_value, (int, float)):
+                    raise SystemExit(
+                        f"Non-numeric metric in {split_name}: "
+                        f"{experiment_name}/{method_name}/{metric_name}={metric_value!r}"
+                    )
+
+        leaked_metrics = set(train_metrics) & set(test_metrics)
+        if leaked_metrics:
+            raise SystemExit(
+                f"Metric leakage between train and test for {experiment_name}/{method_name}: "
+                f"{sorted(leaked_metrics)}"
+            )
+
+if train_path.read_text() == test_path.read_text():
+    raise SystemExit("Train/test score files are byte-identical")
+
 print("split_outputs_validated=true")
+print(f"train_experiments={sorted(train_experiments)}")
+print(f"test_experiments={sorted(test_experiments)}")
 PY
 
 echo ""

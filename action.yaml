@@ -1,4 +1,3 @@
-action: submit
+action: done
 gpus: 0
-test: false
-notes: "Run scripts/evaluate_train.sh and scripts/evaluate_test.sh on the frozen reproduction artifact; validate matching experiment/method sets and populate scores_{train,test}.json."
+notes: "Metric triangulation split; 4 train metrics and 5 test metrics scored from the frozen artifact; pendulum hidden ratios show a strong 2.93 log10 exact-vs-GN gap, LQR test timing remains close to train with a 1.21 tight/loose runtime ratio caveat."
