@@ -1,100 +1,63 @@
 #!/bin/bash
-# Job script for acados differentiable MPC reproduction.
-#
-# This runs inside the compute container with:
-#   - Your workspace mounted at /home/user
-#   - GPU(s) available (if requested)
-#   - No internet access on compute node
-#
-# All required source trees, generated assets, and Python packages must be
-# prepared before submission. This script only runs the evaluation payload.
+# CPU-only split-evaluation job for the frozen reproduction artifact.
 
-set -e
+set -euo pipefail
 
 cd /home/user
 
-export ACADOS_SOURCE_DIR=/home/user/method/acados
-export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
-export PYTHONNOUSERSITE=1
-export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
-
-for dep_dir in /home/user/environment/vendor_py310/*; do
-    if [ -d "${dep_dir}" ]; then
-        export PYTHONPATH="${dep_dir}:${PYTHONPATH}"
-    fi
-done
-
-CASADI_VENDOR_DIR="$(find /home/user/environment/vendor_py310 -maxdepth 1 -mindepth 1 -type d -name 'casadi-*' 2>/dev/null | head -n 1)"
-if [ -n "${CASADI_VENDOR_DIR}" ]; then
-    export LD_LIBRARY_PATH="${CASADI_VENDOR_DIR}/casadi:${LD_LIBRARY_PATH}"
-fi
-
 echo "========================================"
-echo "ACADOS DIFFERENTIABLE MPC - EVALUATE"
+echo "ACADOS DIFFERENTIABLE MPC - SPLIT EVAL"
 echo "========================================"
-echo "ACADOS_SOURCE_DIR=${ACADOS_SOURCE_DIR}"
-echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
-echo "PYTHONNOUSERSITE=${PYTHONNOUSERSITE}"
-echo "CASADI_VENDOR_DIR=${CASADI_VENDOR_DIR:-}"
 
-if [ ! -f "${ACADOS_SOURCE_DIR}/lib/libacados.so" ]; then
-    echo "ERROR: missing ${ACADOS_SOURCE_DIR}/lib/libacados.so"
-    exit 1
-fi
-
-if [ ! -x "${ACADOS_SOURCE_DIR}/bin/t_renderer" ]; then
-    echo "ERROR: missing executable ${ACADOS_SOURCE_DIR}/bin/t_renderer"
+if [ ! -f /home/user/checkpoints/reproduction_results.json ]; then
+    echo "ERROR: missing /home/user/checkpoints/reproduction_results.json"
     exit 1
 fi
 
 echo ""
-echo ">>> Verifying runtime Python imports..."
+echo ">>> Running visible train-slice evaluation..."
+bash /home/user/scripts/evaluate_train.sh
+
+echo ""
+echo ">>> Running held-out test-slice evaluation..."
+bash /home/user/scripts/evaluate_test.sh
+
+echo ""
+echo ">>> Validating split outputs..."
 python3 - <<'PY'
-import sys
-import traceback
+import json
+from pathlib import Path
 
-sys.path.insert(0, "/home/user/method")
-from bootstrap_runtime import ensure_casadi_importable
+train_path = Path("/home/user/scoring/scores_train.json")
+test_path = Path("/home/user/scoring/scores_test.json")
 
-print(f"python={sys.executable}")
-print(f"version={sys.version}")
-print(f"sys.path[:12]={sys.path[:12]}")
-try:
-    casadi = ensure_casadi_importable()
-except Exception as exc:
-    print(f"casadi_bootstrap_failed={exc.__class__.__name__}: {exc}")
-    traceback.print_exc()
-    raise
-print(f"casadi_file={getattr(casadi, '__file__', None)}")
-print(
-    "casadi_symbols="
-    f"{all(hasattr(casadi, name) for name in ('MX', 'SX', 'Function'))}"
-)
+train = json.loads(train_path.read_text())
+test = json.loads(test_path.read_text())
+
+train_experiments = set(train.get("experiments", {}))
+test_experiments = set(test.get("experiments", {}))
+if train_experiments != test_experiments:
+    raise SystemExit(
+        f"Experiment mismatch: train={sorted(train_experiments)} "
+        f"test={sorted(test_experiments)}"
+    )
+
+for experiment_name in sorted(train_experiments):
+    train_methods = set(train["experiments"][experiment_name].get("results", {}))
+    test_methods = set(test["experiments"][experiment_name].get("results", {}))
+    if train_methods != test_methods:
+        raise SystemExit(
+            f"Method mismatch for {experiment_name}: "
+            f"train={sorted(train_methods)} test={sorted(test_methods)}"
+        )
+    if not train_methods:
+        raise SystemExit(f"No methods scored for {experiment_name}")
+
+print("split_outputs_validated=true")
 PY
-
-echo ""
-echo ">>> Rebuilding acados in Release mode..."
-bash /home/user/scripts/build_acados.sh
-
-echo ""
-echo ">>> Verifying acados shared-library linkage..."
-python3 - <<'PY'
-import ctypes
-import sys
-
-sys.path.insert(0, "/home/user/method")
-from bootstrap_runtime import preload_acados_dependencies
-
-loaded = preload_acados_dependencies("/home/user/method/acados")
-print(f"preloaded_shared_libs={loaded}")
-PY
-
-echo ""
-echo ">>> Running reproduction and evaluation..."
-bash /home/user/scripts/reproduce.sh
 
 echo ""
 echo "========================================"
 echo "JOB COMPLETE"
-echo "Results in scoring/scores.json"
+echo "Results in scoring/scores_train.json and scoring/scores_test.json"
 echo "========================================"

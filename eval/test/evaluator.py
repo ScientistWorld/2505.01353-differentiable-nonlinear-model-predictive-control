@@ -52,7 +52,8 @@ def _test_scores(scores: dict) -> dict:
     """Compute derived consistency metrics for the held-out test slice.
 
     Test exposes only derived/composite metrics that verify robustness:
-    - log10_sensitivity_advantage_vs_gn: Ratio of GN to exact Hessian error
+    - log10_sensitivity_advantage_vs_gn: exact-Hessian advantage over GN
+    - log10_gn_vs_exact_ratio: GN competitiveness relative to exact Hessian
     - per_problem_solve_and_sens_ms: Per-problem timing (normalized)
     - tight_to_loose_runtime_ratio: Consistency across control bounds
     """
@@ -82,7 +83,7 @@ def _test_scores(scores: dict) -> dict:
     )
 
     log10_advantage = math.log10((gn_err + EPS) / (exact_err + EPS))
-    log10_gn_vs_exact = math.log10((gn_err + EPS) / (exact_err + EPS))
+    log10_gn_vs_exact = math.log10((exact_err + EPS) / (gn_err + EPS))
     tight_to_loose_ratio = low_time / max(high_time, EPS)
 
     return {
@@ -91,10 +92,9 @@ def _test_scores(scores: dict) -> dict:
                 "results": {
                     "acados_exact_hessian": {
                         "log10_sensitivity_advantage_vs_gn": log10_advantage,
-                        "log10_gn_vs_exact_ratio": log10_gn_vs_exact,
                     },
                     "gauss_newton_approx": {
-                        "sensitivity_max_error": gn_err,
+                        "log10_gn_vs_exact_ratio": log10_gn_vs_exact,
                     },
                 }
             },

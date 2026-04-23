@@ -1,3 +1,4 @@
-action: done
+action: submit
 gpus: 0
-notes: "Improvements: added log10_gn_vs_exact_ratio metric balancing baseline comparative signal; deleted score file stubs; added DESIGN_NOTES.md. Notes: metric triangulation design is complete and validated."
+test: false
+notes: "Run scripts/evaluate_train.sh and scripts/evaluate_test.sh on the frozen reproduction artifact; validate matching experiment/method sets and populate scores_{train,test}.json."

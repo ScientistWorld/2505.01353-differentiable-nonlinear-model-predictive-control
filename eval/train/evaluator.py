@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Visible train-slice scorer for differentiable NMPC result artifacts.
 
-Train slice exposes primary metrics: sensitivity_max_error and solve_and_sens_time_ms.
-These are the core metrics from the paper that future agents can see and optimize against.
+Train exposes only the paper's direct metrics, not every field that may appear
+in the method artifact. This prevents future methods from leaking hidden or
+derived metrics into the visible slice.
 """
 
 from __future__ import annotations
@@ -49,16 +50,28 @@ def _validate_results(scores: dict) -> None:
             _metric(scores, experiment_name, method_name, metric_name)
 
 
+def _train_scores(scores: dict) -> dict:
+    """Return only the visible primary metrics for the train slice."""
+    output = {"experiments": {}}
+    for (experiment_name, method_name), metric_names in REQUIRED_METRICS.items():
+        experiment = output["experiments"].setdefault(experiment_name, {"results": {}})
+        result = experiment["results"].setdefault(method_name, {})
+        for metric_name in metric_names:
+            result[metric_name] = _metric(scores, experiment_name, method_name, metric_name)
+    return output
+
+
 def evaluate_all(input_path: str = DEFAULT_INPUT, output_path: str = DEFAULT_OUTPUT) -> dict:
-    """Write the train split using the paper-visible benchmark metrics."""
+    """Write the train split using only the paper-visible benchmark metrics."""
     if not os.path.exists(input_path):
         raise FileNotFoundError(
             f"Missing method results artifact: {input_path}. "
             "Run scripts/method.sh or provide --input."
         )
 
-    scores = _load_json(input_path)
-    _validate_results(scores)
+    raw_scores = _load_json(input_path)
+    _validate_results(raw_scores)
+    scores = _train_scores(raw_scores)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as handle:
         json.dump(scores, handle, indent=2)
