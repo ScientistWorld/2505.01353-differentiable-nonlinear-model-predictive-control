@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Visible train-slice scorer for differentiable NMPC result artifacts."""
+"""Visible train-slice scorer for differentiable NMPC result artifacts.
+
+Train slice exposes primary metrics: sensitivity_max_error and solve_and_sens_time_ms.
+These are the core metrics from the paper that future agents can see and optimize against.
+"""
 
 from __future__ import annotations
 

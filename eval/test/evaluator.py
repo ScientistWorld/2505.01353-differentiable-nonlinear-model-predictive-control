@@ -49,6 +49,13 @@ def _validate_results(scores: dict) -> None:
 
 
 def _test_scores(scores: dict) -> dict:
+    """Compute derived consistency metrics for the held-out test slice.
+
+    Test exposes only derived/composite metrics that verify robustness:
+    - log10_sensitivity_advantage_vs_gn: Ratio of GN to exact Hessian error
+    - per_problem_solve_and_sens_ms: Per-problem timing (normalized)
+    - tight_to_loose_runtime_ratio: Consistency across control bounds
+    """
     exact_err = _metric(
         scores,
         "pendulum_sensitivity_accuracy",
@@ -82,7 +89,6 @@ def _test_scores(scores: dict) -> dict:
             "pendulum_sensitivity_accuracy": {
                 "results": {
                     "acados_exact_hessian": {
-                        "sensitivity_max_error": exact_err,
                         "log10_sensitivity_advantage_vs_gn": log10_advantage,
                     },
                     "gauss_newton_approx": {
@@ -93,7 +99,6 @@ def _test_scores(scores: dict) -> dict:
             "bounded_lqr_umax_high": {
                 "results": {
                     "acados": {
-                        "solve_and_sens_time_ms": high_time,
                         "per_problem_solve_and_sens_ms": high_time / LQR_BATCH_SIZE,
                     }
                 }
@@ -101,7 +106,6 @@ def _test_scores(scores: dict) -> dict:
             "bounded_lqr_umax_low": {
                 "results": {
                     "acados": {
-                        "solve_and_sens_time_ms": low_time,
                         "per_problem_solve_and_sens_ms": low_time / LQR_BATCH_SIZE,
                         "tight_to_loose_runtime_ratio": tight_to_loose_ratio,
                     }
