@@ -1120,12 +1120,17 @@ The workspace evaluates candidate methods on one accuracy-focused experiment and
 
 </details>
 
+### Iteration 1: MiniMax-M2.7
+- **Milestone**: `core_claim` | **Status**: done
+- **Working time**: 1m | **GPU**: 0.0h
+- **Jobs**: 7 total (2 completed, 5 failed)
+
 
 ---
 
 # Reproduction Milestones
 
-**Current: none**
+**Current: core_claim**
 
 ## Stop Justification
-- Completed at milestone `none`.
+- Completed at milestone `core_claim`.

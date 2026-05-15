@@ -1,8 +1,8 @@
 # Reproduction Milestones
 
-**Current: none**
+**Current: core_claim**
 
 ## Progress Log
 
 ## Stop Justification
-- Completed at milestone `none`.
+- Completed at milestone `core_claim`.
