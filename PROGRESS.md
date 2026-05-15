@@ -10,6 +10,8 @@
 - 2026-05-15 nominal status guard fix: `method/run_reproduction.py` now accepts finite status-4 pendulum iterates while still rejecting non-finite values and unexpected statuses. The method prints the nominal status histogram and the finite-difference/ref statuses so downstream auditors can see when MINSTEP iterates were used.
 - 2026-05-15 job `76839165-68a`: the packaged script path exited 0 but did not support the core claim. All pendulum nominal solves were status `ACADOS_MINSTEP`, finite-difference sensitivity was zero, exact-Hessian error was `81138.3388`, and Gauss-Newton error was `28850.3972`. These numbers are real artifacts from the run, but they are scientifically invalid for milestone restoration.
 - 2026-05-15 pendulum convergence fix: patched the pendulum OCP solver options to use a smaller HPIPM barrier initialization (`qp_solver_mu0=1e-3`) and a larger QP iteration budget. Added method-level and job-level sanity checks so the reproduction fails fast when exact-Hessian sensitivities are degenerate, non-finite, worse than Gauss-Newton, or above the Section 5.1 accuracy tolerance.
+- 2026-05-15 job `8abe96cf-11c`: the method rebuilt and reran, but the new sanity guard rejected the result because the pendulum finite-difference sensitivity was still degenerate. This keeps the milestone at `method_runs`; no new valid score artifact was produced.
+- 2026-05-15 warm-start fix: patched the nominal pendulum solve to initialize every cold solve from a dynamics-consistent RK4 rollout and changed partial condensing to `qp_solver_cond_N=5`. This preserves the paper's Appendix A.10 OCP and Appendix A.8 sensitivity workflow, but gives the nominal SQP/IPM path a feasible trajectory-shaped initialization before factorizing sensitivities.
 - 2026-05-15 continuation audit: reviewed `method/`, `eval/`, scripts, scoring docs, and current artifacts. The implementation is still a real reproduction of the paper's differentiable NMPC sensitivity computation, not a surrogate, and evaluator import separation passes. However, the available checkpoint and score artifacts are timestamped before the LQR correction, so the corrected benchmark is not yet validated and `core_claim` remains pending.
 - 2026-05-15 audit update: a new implementation audit found that the inherited LQR timing path did not impose the paper's stage-0 equality constraint for each batch element and did not use the packed `H` matrix as a symbolic parameter in the cost. I fixed both issues in `method/run_reproduction.py` and changed `scripts/run.sh` to regenerate method artifacts before scoring. The corrected LQR numbers are not claimed until the submitted CPU job finishes.
 - 2026-05-15 continuation audit: accepted the reset audit state, re-read the implementation and evaluator, and restored `core_claim`. The method is a real acados-based implementation of the paper's differentiable NMPC sensitivity computation, not a surrogate. `bash scripts/evaluate.sh` and `python3 validate.py --compare` both pass locally, and the previous compute-node run `58199a5f-9c0` remains the validated end-to-end reproduction run.
@@ -38,6 +40,7 @@
 - `method/run_reproduction.py`: authoritative method path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
 - The pendulum sensitivity path now uses the paper's two-solver sensitivity pattern: nominal solve first, exact-Hessian factorization and adjoint sensitivity second.
 - The current pendulum artifact from job `76839165-68a` is rejected as a failed core-claim attempt; the next job must regenerate a nondegenerate finite-difference sensitivity with exact-Hessian error below Gauss-Newton error.
+- The current pendulum retry from job `8abe96cf-11c` did not write a replacement artifact because the method-level degenerate-sensitivity guard stopped the run.
 - `eval/evaluator.py`: method-agnostic scorer for `checkpoints/reproduction_results.json`
 - `scripts/evaluate.sh` is the standard scoring entry point and writes `scoring/scores.json`
 - scoring/TARGETS.md, scoring/CONSTRAINTS.md, scoring/DIRECTION.md filled and aligned with the current evaluator configuration
@@ -76,6 +79,7 @@
 - Job `f23c2850-d14` reached method execution but exposed a method fidelity bug in the pendulum reproduction path: it tried to solve with the exact-Hessian sensitivity solver and converted the resulting `ACADOS_MINSTEP` status into a negative sentinel. Fixed by removing that solve and using exact-Hessian factorization on the nominal iterate, matching Appendix A.8.
 - Job `2709a928-9ac` showed that the pendulum nominal solver reports `ACADOS_MINSTEP` across the sweep even though finite iterates are available. The reproduction now treats this as a usable finite stationary iterate for sensitivity setup, and logs the status distribution rather than silently counting it as a clean solve.
 - Job `76839165-68a` proved that merely accepting finite `ACADOS_MINSTEP` iterates is not sufficient: the accepted iterates generated a degenerate finite-difference derivative and enormous adjoint errors. The new method/job guards reject that condition.
+- Job `8abe96cf-11c` showed that smaller HPIPM barrier initialization and more QP iterations alone were not enough to recover a useful nominal pendulum solution. The next submitted run adds a dynamics-consistent RK4 warm start and smaller partial-condensing blocks.
 - LQR timing varies noticeably across reruns, so the current timing benchmark is less stable than the pendulum sensitivity result
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
@@ -95,7 +99,7 @@
 
 ## Pending Job
 
-- Resubmitting a CPU test job to run `scripts/run.sh`, repair/validate the vendored runtime, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores with the corrected pendulum solver settings. The previous artifact currently visible in the workspace contains invalid pendulum sensitivity errors and must not be used for milestone restoration.
+- Resubmitting a CPU test job to run `scripts/run.sh`, repair/validate the vendored runtime, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores with the RK4-warm-started pendulum solver settings. The previous artifact currently visible in the workspace contains invalid pendulum sensitivity errors and must not be used for milestone restoration.
 
 ## Deviations from Paper
 

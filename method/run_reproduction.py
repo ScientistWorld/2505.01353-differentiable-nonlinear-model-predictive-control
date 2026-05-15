@@ -76,6 +76,7 @@ def _build_parametric_pendulum_components():
     k3 = ode(x + dt / 2.0 * k2, force, theta)
     k4 = ode(x + dt * k3, force, theta)
     x_next = x + dt / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+    step_fun = ca.Function("pendulum_step", [x, force, theta], [x_next])
 
     model = AcadosModel()
     model.name = "pendulum_parametric_eval"
@@ -95,6 +96,7 @@ def _build_parametric_pendulum_components():
         "x0": x0,
         "n_horizon": n_horizon,
         "t_horizon": t_horizon,
+        "step_fun": step_fun,
         "f_max": f_max,
         "theta_vals": theta_vals,
         "q_mat": q_mat,
@@ -114,7 +116,9 @@ def _build_pendulum_ocp(components, *, hessian_approx: str, name: str):
     ocp.solver_options.integrator_type = "DISCRETE"
     ocp.solver_options.nlp_solver_type = "SQP"
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.qp_solver_cond_N = components["n_horizon"]
+    # Partial condensing with a small block count is materially more stable for
+    # this ill-conditioned constrained pendulum than leaving the full N=50 QP.
+    ocp.solver_options.qp_solver_cond_N = min(5, components["n_horizon"])
     ocp.solver_options.qp_solver_ric_alg = 0
     ocp.solver_options.qp_solver_cond_ric_alg = 0
     # The Appendix A.10 pendulum problem is ill-conditioned near the path
@@ -162,6 +166,22 @@ def _build_pendulum_ocp(components, *, hessian_approx: str, name: str):
     return ocp
 
 
+def _initialize_pendulum_primal(solver, components, theta_val: float, control_value: float = 0.0):
+    """Warm-start x/u with a dynamics-consistent RK4 rollout."""
+    state = np.array(components["x0"], dtype=float)
+    control = np.array([control_value], dtype=float)
+    for stage in range(components["n_horizon"]):
+        solver.set(stage, "x", state)
+        solver.set(stage, "u", control)
+        state = np.array(
+            components["step_fun"](state, float(control[0]), float(theta_val)),
+            dtype=float,
+        ).reshape(-1)
+        if not np.all(np.isfinite(state)):
+            raise RuntimeError(f"Pendulum rollout warm start became non-finite at stage {stage}")
+    solver.set(components["n_horizon"], "x", state)
+
+
 def run_pendulum_eval():
     """
     Reproduce the core claim from Section 5.1.
@@ -193,9 +213,18 @@ def run_pendulum_eval():
         """Solve the nominal NLP and return u_0 plus the acados iterate."""
         if initial_iterate is not None:
             solver_gn.set_iterate(initial_iterate)
+        else:
+            solver_gn.reset()
+            _initialize_pendulum_primal(solver_gn, components, theta_val)
         solver_gn.set_p_global_and_precompute_dependencies(np.array([theta_val], dtype=float))
         solver_gn.solve()
         status = int(solver_gn.status)
+        if initial_iterate is not None and status == 4:
+            solver_gn.reset()
+            _initialize_pendulum_primal(solver_gn, components, theta_val)
+            solver_gn.set_p_global_and_precompute_dependencies(np.array([theta_val], dtype=float))
+            solver_gn.solve()
+            status = int(solver_gn.status)
         u0 = float(solver_gn.get(0, "u")[0])
         if not np.isfinite(u0):
             raise RuntimeError(
@@ -265,11 +294,18 @@ def run_pendulum_eval():
 
     max_err_exact = abs(adj_sens_exact - fd_sens_nominal)
     max_err_gn = abs(adj_sens_gn - fd_sens_nominal)
+    status_hist = {
+        str(status): nominal_statuses.count(status)
+        for status in sorted({status for status in nominal_statuses if status is not None})
+    }
 
     if not np.isfinite(fd_sens_nominal) or abs(fd_sens_nominal) < 1e-8:
         raise RuntimeError(
             "Pendulum finite-difference sensitivity is degenerate; "
-            "the nominal solve is not suitable for reproducing the sensitivity claim."
+            "the nominal solve is not suitable for reproducing the sensitivity claim. "
+            f"fd={fd_sens_nominal}, statuses={status_hist}, "
+            f"plus={plus_status}, minus={minus_status}, ref={ref_status}, "
+            f"u_plus={u_plus}, u_minus={u_minus}"
         )
     if not np.isfinite(max_err_exact) or not np.isfinite(max_err_gn):
         raise RuntimeError("Pendulum sensitivity errors must be finite")
@@ -279,10 +315,6 @@ def run_pendulum_eval():
             f"(exact_error={max_err_exact}, gn_error={max_err_gn})"
         )
 
-    status_hist = {
-        str(status): nominal_statuses.count(status)
-        for status in sorted({status for status in nominal_statuses if status is not None})
-    }
     print("Pendulum Section 5.1 summary:")
     print(f"  gn solved points: {int(np.sum(np.isfinite(u0_gn)))}/{len(theta_vals)}")
     print(f"  gn status histogram: {status_hist}")

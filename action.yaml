@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: method_runs
-notes: "Retry pendulum core-claim run after reducing HPIPM barrier initialization, increasing QP iterations, and adding sanity checks that reject degenerate or worse-than-GN exact-Hessian sensitivities."
+notes: "Retry pendulum core-claim run after adding a dynamics-consistent RK4 warm start and smaller partial-condensing blocks to recover nondegenerate nominal sensitivities."

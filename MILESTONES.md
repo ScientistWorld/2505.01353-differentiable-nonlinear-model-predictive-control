@@ -35,5 +35,10 @@
 - Kept the milestone at `method_runs` and patched the pendulum solver options to use a smaller HPIPM barrier initialization with more QP iterations.
 - Added core-claim sanity checks so future submitted runs fail if the regenerated exact-Hessian sensitivity is non-finite, negative, worse than Gauss-Newton, or too inaccurate for the Section 5.1 reproduction.
 
+### [2026-05-15 17:12] - method_runs
+- Job `8abe96cf-11c` failed in the new pendulum sanity guard, confirming that the previous solver-option change still produced a degenerate finite-difference sensitivity rather than a valid core-claim result.
+- Patched the pendulum nominal solve to start from a dynamics-consistent RK4 rollout and changed partial condensing to `qp_solver_cond_N=5`, matching the stable local acados smoke configuration while preserving the paper's OCP and sensitivity algorithm.
+- Expanded the degenerate-sensitivity error message to include finite-difference values and nominal status counts for the next audit log.
+
 ## Stop Justification
-- Not stopped. Corrected pendulum solver settings and core-claim guards are being submitted for compute-node validation.
+- Not stopped. Dynamics-consistent pendulum warm starts and smaller partial-condensing blocks are being submitted for compute-node validation.
