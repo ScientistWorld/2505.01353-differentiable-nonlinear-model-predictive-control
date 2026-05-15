@@ -162,7 +162,7 @@ def run_pendulum_eval():
     1. Solve the nominal NLP with a Gauss-Newton SQP solver.
     2. Transfer the primal-dual iterate to an exact-Hessian sensitivity solver.
     3. Factorize the exact-Hessian QP and evaluate adjoint sensitivities.
-    4. Compare against finite-difference sensitivities of the exact solution map.
+    4. Compare against finite-difference sensitivities of the nominal solution map.
     """
     components = _build_parametric_pendulum_components()
     AcadosOcpSolver = components["AcadosOcpSolver"]
@@ -177,113 +177,83 @@ def run_pendulum_eval():
     )
 
     theta_vals = components["theta_vals"]
-    n_horizon = components["n_horizon"]
-    u0_gn = np.zeros(len(theta_vals))
+    u0_gn = np.full(len(theta_vals), np.nan, dtype=float)
     gn_iterates = []
 
+    def solve_nominal(theta_val, initial_iterate=None):
+        """Solve the nominal NLP and return u_0 plus the acados iterate."""
+        if initial_iterate is not None:
+            solver_gn.set_iterate(initial_iterate)
+        solver_gn.set_p_global_and_precompute_dependencies(np.array([theta_val], dtype=float))
+        solver_gn.solve()
+        status = int(solver_gn.status)
+        if status not in (0, 2):
+            raise RuntimeError(f"Nominal pendulum solve failed at theta={theta_val}: status={status}")
+        return float(solver_gn.get(0, "u")[0]), solver_gn.get_iterate()
+
     for idx, theta_val in enumerate(theta_vals):
-        p_val = np.array([theta_val], dtype=float)
-        solver_gn.set_p_global_and_precompute_dependencies(p_val)
         try:
-            solver_gn.solve()
-            u0_gn[idx] = float(solver_gn.get(0, "u")[0])
-            gn_iterates.append(solver_gn.get_iterate())
+            u0_gn[idx], iterate = solve_nominal(float(theta_val))
+            gn_iterates.append(iterate)
         except Exception:
             gn_iterates.append(None)
             continue
 
-    fd_sens_gn = np.gradient(u0_gn, theta_vals)
+    if not np.all(np.isfinite(u0_gn)):
+        bad_count = int(np.sum(~np.isfinite(u0_gn)))
+        raise RuntimeError(f"{bad_count} nominal pendulum sweep points failed")
 
     ref_idx = len(theta_vals) // 2
     ref_theta = float(theta_vals[ref_idx])
+    ref_seed_iterate = gn_iterates[ref_idx]
+    eps = 1e-5
 
-    solver_gn.set_p_global_and_precompute_dependencies(np.array([ref_theta]))
-    solver_gn.solve()
-    gn_iterate_ref = solver_gn.get_iterate()
+    u_plus, _ = solve_nominal(ref_theta + eps, ref_seed_iterate)
+    u_minus, _ = solve_nominal(ref_theta - eps, ref_seed_iterate)
+    fd_sens_nominal = (u_plus - u_minus) / (2.0 * eps)
 
+    _, gn_iterate_ref = solve_nominal(ref_theta, ref_seed_iterate)
     solver_ex.set_p_global_and_precompute_dependencies(np.array([ref_theta]))
     solver_ex.set_iterate(gn_iterate_ref)
-    solver_ex.solve()
-    status_ex = solver_ex.status
 
-    if status_ex in (0, 2):
-        eps = 1e-5
-        theta_plus = ref_theta + eps
-        theta_minus = ref_theta - eps
-        results_exact = {}
+    seed_x = [(0, np.zeros((4, 1)))]
+    seed_u = [(0, np.ones((1, 1)))]
 
-        for theta_val, label in [(ref_theta, "ref"), (theta_plus, "ref_plus"), (theta_minus, "ref_minus")]:
-            solver_ex.set_p_global_and_precompute_dependencies(np.array([theta_val]))
-            if theta_val == ref_theta:
-                solver_ex.set_iterate(gn_iterate_ref)
-            else:
-                nearest_idx = int(np.argmin(np.abs(theta_vals - theta_val)))
-                nearest_iterate = gn_iterates[nearest_idx]
-                if nearest_iterate is not None:
-                    solver_ex.set_iterate(nearest_iterate)
-            solver_ex.solve()
-            results_exact[label] = {
-                "u0": float(solver_ex.get(0, "u")[0]),
-                "status": int(solver_ex.status),
-            }
+    exact_factor_status = solver_ex.setup_qp_matrices_and_factorize()
+    if exact_factor_status not in (None, 0):
+        raise RuntimeError(f"Exact-Hessian factorization failed: status={exact_factor_status}")
+    exact_raw = solver_ex.eval_adjoint_solution_sensitivity(
+        seed_x,
+        seed_u,
+        with_respect_to="p_global",
+        sanity_checks=False,
+    )
+    if exact_raw is None or len(exact_raw) == 0:
+        raise RuntimeError("Exact-Hessian adjoint sensitivity returned no data")
+    adj_sens_exact = float(np.asarray(exact_raw).reshape(-1)[0])
 
-        all_converged = all(result["status"] in (0, 2) for result in results_exact.values())
-        if all_converged:
-            fd_sens_exact = (
-                results_exact["ref_plus"]["u0"] - results_exact["ref_minus"]["u0"]
-            ) / (2.0 * eps)
+    gn_factor_status = solver_gn.setup_qp_matrices_and_factorize()
+    if gn_factor_status not in (None, 0):
+        raise RuntimeError(f"Gauss-Newton factorization failed: status={gn_factor_status}")
+    gn_raw = solver_gn.eval_adjoint_solution_sensitivity(
+        seed_x,
+        seed_u,
+        with_respect_to="p_global",
+        sanity_checks=False,
+    )
+    if gn_raw is None or len(gn_raw) == 0:
+        raise RuntimeError("Gauss-Newton adjoint sensitivity returned no data")
+    adj_sens_gn = float(np.asarray(gn_raw).reshape(-1)[0])
 
-            adj_sens_exact = None
-            try:
-                solver_ex.setup_qp_matrices_and_factorize()
-                seed_x = [(0, np.zeros((4, 1)))]
-                seed_u = [(0, np.ones((1, 1)))]
-                exact_raw = solver_ex.eval_adjoint_solution_sensitivity(
-                    seed_x,
-                    seed_u,
-                    with_respect_to="p_global",
-                    sanity_checks=False,
-                )
-                if exact_raw is not None and len(exact_raw) > 0:
-                    adj_sens_exact = float(np.asarray(exact_raw).reshape(-1)[0])
-            except Exception:
-                pass
-
-            adj_sens_gn = None
-            try:
-                solver_gn.setup_qp_matrices_and_factorize()
-                seed_x = [(0, np.zeros((4, 1)))]
-                seed_u = [(0, np.ones((1, 1)))]
-                gn_raw = solver_gn.eval_adjoint_solution_sensitivity(
-                    seed_x,
-                    seed_u,
-                    with_respect_to="p_global",
-                    sanity_checks=False,
-                )
-                if gn_raw is not None and len(gn_raw) > 0:
-                    adj_sens_gn = float(np.asarray(gn_raw).reshape(-1)[0])
-            except Exception:
-                pass
-
-            if adj_sens_exact is not None:
-                max_err_exact = abs(adj_sens_exact - fd_sens_exact)
-            else:
-                max_err_exact = abs(fd_sens_exact - fd_sens_gn[ref_idx])
-
-            if adj_sens_gn is not None:
-                max_err_gn = abs(adj_sens_gn - fd_sens_exact)
-            else:
-                max_err_gn = abs(fd_sens_gn[ref_idx] - fd_sens_exact)
-        else:
-            max_err_exact = 0.0
-            max_err_gn = 0.0
-    else:
-        max_err_exact = -1.0
-        max_err_gn = abs(fd_sens_gn[ref_idx])
+    max_err_exact = abs(adj_sens_exact - fd_sens_nominal)
+    max_err_gn = abs(adj_sens_gn - fd_sens_nominal)
 
     print("Pendulum Section 5.1 summary:")
-    print(f"  gn solved points: {int(np.sum(u0_gn != 0))}/{len(theta_vals)}")
-    print(f"  exact status at reference: {status_ex}")
+    print(f"  gn solved points: {int(np.sum(np.isfinite(u0_gn)))}/{len(theta_vals)}")
+    print(f"  exact factorization status at reference: {exact_factor_status}")
+    print(f"  finite-difference sensitivity: {fd_sens_nominal:.6f}")
+    print(f"  exact adjoint sensitivity:     {adj_sens_exact:.6f}")
+    print(f"  gn adjoint sensitivity:        {adj_sens_gn:.6f}")
     print(f"  exact max error:  {max_err_exact:.6f}")
     print(f"  gn max error:     {max_err_gn:.6f}")
 

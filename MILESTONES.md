@@ -20,5 +20,11 @@
 - Restored the missing NumPy `core.py` and `core.pyi` files from the local wheel, unignored them, and added `scripts/repair_vendor_runtime.sh` so offline compute jobs repair/validate the vendored runtime before importing acados.
 - Resubmitting the same corrected end-to-end CPU reproduction job after the environment packaging fix.
 
+### [2026-05-15 16:58] - method_runs
+- Job `f23c2850-d14` confirmed the vendored runtime repair works: the method built acados solvers, regenerated raw artifacts, and completed both bounded-LQR timing experiments.
+- The job failed in the held-out scorer because the pendulum branch wrote a negative sentinel after incorrectly trying to solve the NLP with the exact-Hessian sensitivity solver; this is not the paper's two-solver sensitivity workflow.
+- Patched the pendulum reproduction to solve only the nominal NLP, transfer the iterate to the exact-Hessian solver, factorize the exact-Hessian QP, and evaluate adjoint sensitivities against a finite-difference nominal solution map.
+- Tightened the held-out evaluator to reject non-finite or negative metric values with a clear validation error.
+
 ## Stop Justification
-- Not stopped. Corrected benchmark is being submitted for compute-node validation.
+- Not stopped. Corrected pendulum sensitivity path is being submitted for compute-node validation.

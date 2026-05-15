@@ -39,13 +39,22 @@ def _metric(scores: dict, experiment_name: str, method_name: str, metric_name: s
     return float(value)
 
 
+def _nonnegative_metric(scores: dict, experiment_name: str, method_name: str, metric_name: str) -> float:
+    value = _metric(scores, experiment_name, method_name, metric_name)
+    if not math.isfinite(value) or value < 0.0:
+        raise ValueError(
+            f"{experiment_name}/{method_name}/{metric_name} must be a finite nonnegative value"
+        )
+    return value
+
+
 def _validate_results(scores: dict) -> None:
     if not isinstance(scores.get("experiments"), dict):
         raise ValueError("Input must contain an 'experiments' object")
 
     for (experiment_name, method_name), metric_names in REQUIRED_METRICS.items():
         for metric_name in metric_names:
-            _metric(scores, experiment_name, method_name, metric_name)
+            _nonnegative_metric(scores, experiment_name, method_name, metric_name)
 
 
 def _test_scores(scores: dict) -> dict:
@@ -57,25 +66,25 @@ def _test_scores(scores: dict) -> dict:
     - per_problem_solve_and_sens_ms: Per-problem timing (normalized)
     - tight_to_loose_runtime_ratio: Consistency across control bounds
     """
-    exact_err = _metric(
+    exact_err = _nonnegative_metric(
         scores,
         "pendulum_sensitivity_accuracy",
         "acados_exact_hessian",
         "sensitivity_max_error",
     )
-    gn_err = _metric(
+    gn_err = _nonnegative_metric(
         scores,
         "pendulum_sensitivity_accuracy",
         "gauss_newton_approx",
         "sensitivity_max_error",
     )
-    high_time = _metric(
+    high_time = _nonnegative_metric(
         scores,
         "bounded_lqr_umax_high",
         "acados",
         "solve_and_sens_time_ms",
     )
-    low_time = _metric(
+    low_time = _nonnegative_metric(
         scores,
         "bounded_lqr_umax_low",
         "acados",

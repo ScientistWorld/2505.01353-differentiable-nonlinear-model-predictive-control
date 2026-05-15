@@ -4,6 +4,8 @@
 
 - Current milestone: `method_runs`
 - 2026-05-15 job `e7e3072e-d55`: failed during startup while importing acados dependencies. The compute container loaded vendored SciPy, which imported vendored NumPy; NumPy failed because `numpy/ma/core.py` was absent from the extracted wheel tree. Root cause was the repository's broad `core.*` ignore rule. Fixed by restoring `numpy/ma/core.py` and `core.pyi` from the local wheel, adding targeted `.gitignore` exceptions, and adding `scripts/repair_vendor_runtime.sh` to verify/repair the offline vendored runtime before method execution.
+- 2026-05-15 job `f23c2850-d14`: the vendored runtime repair succeeded and the submitted job regenerated method artifacts, including corrected LQR timing runs. The held-out evaluator then failed because the pendulum result artifact contained `sensitivity_max_error=-1.0`, produced by a fallback path after an exact-Hessian NLP solve hit `ACADOS_MINSTEP`.
+- 2026-05-15 pendulum fix: patched `method/run_reproduction.py` to follow the paper's Appendix A.8 two-solver workflow exactly for sensitivity evaluation: solve the nominal Gauss-Newton NLP, copy the primal-dual iterate into the exact-Hessian sensitivity solver, factorize the exact-Hessian QP, and evaluate adjoint sensitivities. The exact-Hessian solver is no longer asked to solve the NLP. The held-out evaluator now rejects negative or non-finite metrics explicitly.
 - 2026-05-15 continuation audit: reviewed `method/`, `eval/`, scripts, scoring docs, and current artifacts. The implementation is still a real reproduction of the paper's differentiable NMPC sensitivity computation, not a surrogate, and evaluator import separation passes. However, the available checkpoint and score artifacts are timestamped before the LQR correction, so the corrected benchmark is not yet validated and `core_claim` remains pending.
 - 2026-05-15 audit update: a new implementation audit found that the inherited LQR timing path did not impose the paper's stage-0 equality constraint for each batch element and did not use the packed `H` matrix as a symbolic parameter in the cost. I fixed both issues in `method/run_reproduction.py` and changed `scripts/run.sh` to regenerate method artifacts before scoring. The corrected LQR numbers are not claimed until the submitted CPU job finishes.
 - 2026-05-15 continuation audit: accepted the reset audit state, re-read the implementation and evaluator, and restored `core_claim`. The method is a real acados-based implementation of the paper's differentiable NMPC sensitivity computation, not a surrogate. `bash scripts/evaluate.sh` and `python3 validate.py --compare` both pass locally, and the previous compute-node run `58199a5f-9c0` remains the validated end-to-end reproduction run.
@@ -30,6 +32,7 @@
 - `scripts/reproduce.sh` now runs the acados method producer before calling the reusable evaluator, so a stale `scoring/scores.json` is not the only reproduction path.
 - Environment: container.def (CUDA base), setup.sh (Python deps)
 - `method/run_reproduction.py`: authoritative method path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
+- The pendulum sensitivity path now uses the paper's two-solver sensitivity pattern: nominal solve first, exact-Hessian factorization and adjoint sensitivity second.
 - `eval/evaluator.py`: method-agnostic scorer for `checkpoints/reproduction_results.json`
 - `scripts/evaluate.sh` is the standard scoring entry point and writes `scoring/scores.json`
 - scoring/TARGETS.md, scoring/CONSTRAINTS.md, scoring/DIRECTION.md filled and aligned with the current evaluator configuration
@@ -59,12 +62,13 @@
 ## Remaining
 
 - Secondary claims remain outside the packaged evaluator: the Section 5.3 chain benchmark is exploratory and is not part of the authoritative evaluation path.
-- Run the corrected end-to-end method job and inspect the new LQR timings after enforcing `x_0 = x0_batch[i]` and parameterizing `H`.
+- Run the corrected end-to-end method job and inspect the new pendulum sensitivity errors and LQR timings after enforcing `x_0 = x0_batch[i]` and parameterizing `H`.
 - The LQR timing experiments are constraint benchmarks; runtime interpretation remains hardware-dependent.
 
 ## Issues
 
 - Job `e7e3072e-d55` failed before any method metrics were regenerated due to the missing vendored NumPy `numpy/ma/core.py` file. Fixed in the runtime packaging path; no algorithmic result was produced by that failed job.
+- Job `f23c2850-d14` reached method execution but exposed a method fidelity bug in the pendulum reproduction path: it tried to solve with the exact-Hessian sensitivity solver and converted the resulting `ACADOS_MINSTEP` status into a negative sentinel. Fixed by removing that solve and using exact-Hessian factorization on the nominal iterate, matching Appendix A.8.
 - LQR timing varies noticeably across reruns, so the current timing benchmark is less stable than the pendulum sensitivity result
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
@@ -84,11 +88,12 @@
 
 ## Pending Job
 
-- Resubmitting a CPU test job to run `scripts/run.sh`, repair/validate the vendored runtime, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected benchmark. The previous artifact currently visible in the workspace is stale relative to the LQR fix.
+- Resubmitting a CPU test job to run `scripts/run.sh`, repair/validate the vendored runtime, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected pendulum and LQR benchmark. The previous artifact currently visible in the workspace contains the invalid pendulum sentinel and must not be used for milestone restoration.
 
 ## Deviations from Paper
 
 - The packaged pendulum evaluator follows the paper's Appendix A.10 formulation in the current authoritative method code: `N=50`, `T=2.0`, and the inequality `-1.5 <= p * theta <= 1.5`.
+- For pendulum finite differences, the reproduced reference derivative is taken from the nominal NLP solution map around the reference parameter; the exact-Hessian and Gauss-Newton adjoint sensitivities are both evaluated at the same nominal iterate, as in the paper's two-solver setup.
 - The Section 5.2 benchmark code uses the paper's `n_batch=128`, but the packaged reproduction still reports timings from this local environment rather than a hardware-matched rerun of the paper's exact CPU platform.
 - The corrected Section 5.2 benchmark now enforces the paper's stage-0 equality constraint per batch member and treats `A`, `B`, `b`, and `H` as `p_global` parameters. Corrected timings are pending compute validation.
 - The LQR evaluator previously double-counted solve time when reporting "solution + adjoint sensitivity" timing; this has been corrected in the packaged evaluator.
