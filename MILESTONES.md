@@ -26,5 +26,9 @@
 - Patched the pendulum reproduction to solve only the nominal NLP, transfer the iterate to the exact-Hessian solver, factorize the exact-Hessian QP, and evaluate adjoint sensitivities against a finite-difference nominal solution map.
 - Tightened the held-out evaluator to reject non-finite or negative metric values with a clear validation error.
 
+### [2026-05-15 17:08] - method_runs
+- Job `2709a928-9ac` failed earlier in the pendulum path because every nominal sweep solve returned acados status `ACADOS_MINSTEP`; the iterates were finite, but the new guard discarded them all.
+- Updated the nominal pendulum guard to accept finite status-4 iterates, fail on non-finite values or unexpected statuses, and print a status histogram plus finite-difference statuses for auditability.
+
 ## Stop Justification
 - Not stopped. Corrected pendulum sensitivity path is being submitted for compute-node validation.

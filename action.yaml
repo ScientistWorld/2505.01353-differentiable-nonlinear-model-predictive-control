@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: method_runs
-notes: "Retry after fixing pendulum two-solver sensitivity path: nominal solve, exact-Hessian QP factorization, adjoint sensitivity, then train/test scoring."
+notes: "Retry after accepting finite ACADOS_MINSTEP pendulum nominal iterates for sensitivity setup while logging status histogram and rejecting non-finite values."

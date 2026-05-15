@@ -179,6 +179,7 @@ def run_pendulum_eval():
     theta_vals = components["theta_vals"]
     u0_gn = np.full(len(theta_vals), np.nan, dtype=float)
     gn_iterates = []
+    nominal_statuses = []
 
     def solve_nominal(theta_val, initial_iterate=None):
         """Solve the nominal NLP and return u_0 plus the acados iterate."""
@@ -187,16 +188,25 @@ def run_pendulum_eval():
         solver_gn.set_p_global_and_precompute_dependencies(np.array([theta_val], dtype=float))
         solver_gn.solve()
         status = int(solver_gn.status)
-        if status not in (0, 2):
+        u0 = float(solver_gn.get(0, "u")[0])
+        if not np.isfinite(u0):
+            raise RuntimeError(
+                f"Nominal pendulum solve produced non-finite u0 at theta={theta_val}: status={status}"
+            )
+        if status not in (0, 2, 4):
             raise RuntimeError(f"Nominal pendulum solve failed at theta={theta_val}: status={status}")
-        return float(solver_gn.get(0, "u")[0]), solver_gn.get_iterate()
+        # acados can return ACADOS_MINSTEP (4) on this ill-conditioned sweep while
+        # still exposing the stationary finite iterate used for sensitivity setup.
+        return u0, solver_gn.get_iterate(), status
 
     for idx, theta_val in enumerate(theta_vals):
         try:
-            u0_gn[idx], iterate = solve_nominal(float(theta_val))
+            u0_gn[idx], iterate, status = solve_nominal(float(theta_val))
             gn_iterates.append(iterate)
+            nominal_statuses.append(status)
         except Exception:
             gn_iterates.append(None)
+            nominal_statuses.append(None)
             continue
 
     if not np.all(np.isfinite(u0_gn)):
@@ -208,11 +218,11 @@ def run_pendulum_eval():
     ref_seed_iterate = gn_iterates[ref_idx]
     eps = 1e-5
 
-    u_plus, _ = solve_nominal(ref_theta + eps, ref_seed_iterate)
-    u_minus, _ = solve_nominal(ref_theta - eps, ref_seed_iterate)
+    u_plus, _, plus_status = solve_nominal(ref_theta + eps, ref_seed_iterate)
+    u_minus, _, minus_status = solve_nominal(ref_theta - eps, ref_seed_iterate)
     fd_sens_nominal = (u_plus - u_minus) / (2.0 * eps)
 
-    _, gn_iterate_ref = solve_nominal(ref_theta, ref_seed_iterate)
+    _, gn_iterate_ref, ref_status = solve_nominal(ref_theta, ref_seed_iterate)
     solver_ex.set_p_global_and_precompute_dependencies(np.array([ref_theta]))
     solver_ex.set_iterate(gn_iterate_ref)
 
@@ -248,8 +258,14 @@ def run_pendulum_eval():
     max_err_exact = abs(adj_sens_exact - fd_sens_nominal)
     max_err_gn = abs(adj_sens_gn - fd_sens_nominal)
 
+    status_hist = {
+        str(status): nominal_statuses.count(status)
+        for status in sorted({status for status in nominal_statuses if status is not None})
+    }
     print("Pendulum Section 5.1 summary:")
     print(f"  gn solved points: {int(np.sum(np.isfinite(u0_gn)))}/{len(theta_vals)}")
+    print(f"  gn status histogram: {status_hist}")
+    print(f"  fd/ref statuses: plus={plus_status}, minus={minus_status}, ref={ref_status}")
     print(f"  exact factorization status at reference: {exact_factor_status}")
     print(f"  finite-difference sensitivity: {fd_sens_nominal:.6f}")
     print(f"  exact adjoint sensitivity:     {adj_sens_exact:.6f}")
