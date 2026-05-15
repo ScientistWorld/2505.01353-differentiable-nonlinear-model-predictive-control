@@ -46,4 +46,4 @@
 - `python3 validate.py --compare` passes after the job, including scoring schema checks, eval/method import separation, and train/test split validation.
 
 ## Stop Justification
-- Stopping at `core_claim`: the central Section 5.1 exact-Hessian sensitivity claim is reproduced by a fresh packaged compute-node run. Higher milestones remain limited by incomplete secondary/majority coverage: the Section 5.2 LQR timing benchmark runs, but the tight-bound timing is hardware-sensitive and slower than the paper, and Section 5.3 is not packaged.
+- Completed at milestone `core_claim`.
