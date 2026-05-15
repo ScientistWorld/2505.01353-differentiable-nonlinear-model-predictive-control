@@ -2,7 +2,7 @@
   "experiments": {
     "bounded_lqr_umax_high": {
       "description": "Bounded LQR OCP with u_max=10^4: timing for solving n_batch=128 problems with adjoint sensitivities. N=20, nx=8, nu=4, n_theta=248. From Table 1 of the paper.",
-      "weight": 0.0,
+      "weight": 0.000001,
       "primary_metric": "solve_and_sens_time_ms",
       "metrics": {
         "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": 0.0, "description": "Context-only wall-clock total solve-plus-adjoint-sensitivity latency for the 128 bounded-LQR problems. It is not scored because hardware varies across ResearchGym runs."},
@@ -33,7 +33,7 @@
     },
     "bounded_lqr_umax_low": {
       "description": "Bounded LQR OCP with u_max=1.0: timing for solving n_batch=128 problems with adjoint sensitivities. N=20, nx=8, nu=4, n_theta=248. From Table 1 of the paper. Note: mpc.pytorch fails to converge consistently in this setting.",
-      "weight": 0.0,
+      "weight": 0.000001,
       "primary_metric": "solve_and_sens_time_ms",
       "metrics": {
         "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": 0.0, "description": "Context-only wall-clock total solve-plus-adjoint-sensitivity latency for the 128 tight-bound LQR problems. It is not scored because hardware varies across ResearchGym runs."},
@@ -65,7 +65,7 @@
     },
     "pendulum_sensitivity_accuracy": {
       "description": "Highly-parametric pendulum OCP: sensitivity accuracy vs finite differences. Cart-pole system, N=50, nx=4, nu=1, n_theta=1. Core claim: acados sensitivities match finite differences, while the Gauss-Newton Hessian approximation gives materially worse sensitivities. The paper presents this comparison graphically in Figure 2 and does not report a numeric Gauss-Newton max-error value.",
-      "weight": 1.0,
+      "weight": 0.999998,
       "primary_metric": "sensitivity_max_error",
       "metrics": {
         "sensitivity_max_error": {"higher_is_better": false, "coefficient": -1.0, "description": "Visible absolute error between adjoint sensitivity and finite-difference sensitivity at the pendulum reference point."},

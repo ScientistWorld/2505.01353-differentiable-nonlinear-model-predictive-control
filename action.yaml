@@ -5,4 +5,4 @@ action: done
 gpus: 0
 test: false
 milestone: core_claim
-notes: "Artifact-derived train/test split; 4 train metrics, 7 test metrics; pendulum exact-Hessian beats Gauss-Newton by 6.115 log10 units on held-out ratios; LQR timing retained as zero-weight diagnostic context only."
+notes: "Artifact-derived train/test split; 4 train metrics, 7 test metrics; pendulum exact-Hessian beats Gauss-Newton by 6.115 log10 units on held-out ratios; LQR timing coefficients remain zero with minimal positive schema weights."
