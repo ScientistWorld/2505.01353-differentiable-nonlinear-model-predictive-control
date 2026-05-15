@@ -311,16 +311,18 @@ def run_lqr_eval():
     b_mat = np.random.randn(nx, nu)
     b_vec = np.random.randn(nx)
     h_mat = np.eye(nx + nu)
-    hx_mat = np.eye(nx)
     x0_batch = [np.random.randn(nx) for _ in range(n_batch)]
 
     n_a = nx * nx
     n_b = nx * nu
     n_bias = nx
+    n_h = (nx + nu) * (nx + nu)
     p = ca.SX.sym("p", n_theta_dim)
     a_sym = ca.reshape(p[:n_a], nx, nx)
     b_sym = ca.reshape(p[n_a : n_a + n_b], nx, nu)
     bias_sym = p[n_a + n_b : n_a + n_b + n_bias]
+    h_sym = ca.reshape(p[n_a + n_b + n_bias : n_a + n_b + n_bias + n_h], nx + nu, nx + nu)
+    hx_sym = h_sym[:nx, :nx]
 
     p_vals = np.concatenate([a_mat.flatten(), b_mat.flatten(), b_vec.flatten(), h_mat.flatten()])
     results = {}
@@ -337,12 +339,15 @@ def run_lqr_eval():
         xu = ca.vertcat(ocp.model.x, ocp.model.u)
         ocp.cost.cost_type = "EXTERNAL"
         ocp.cost.cost_type_e = "EXTERNAL"
-        ocp.model.cost_expr_ext_cost = xu.T @ h_mat @ xu
-        ocp.model.cost_expr_ext_cost_e = ocp.model.x.T @ hx_mat @ ocp.model.x
+        ocp.model.cost_expr_ext_cost = xu.T @ h_sym @ xu
+        ocp.model.cost_expr_ext_cost_e = ocp.model.x.T @ hx_sym @ ocp.model.x
 
         ocp.constraints.idxbu = np.arange(nu)
         ocp.constraints.lbu = -u_max * np.ones(nu)
         ocp.constraints.ubu = u_max * np.ones(nu)
+        # Generate stage-0 state bounds so each batch member can impose
+        # x_0 = x0_batch[i], matching Eq. (32b) in the paper.
+        ocp.constraints.x0 = np.zeros(nx)
         ocp.p_global_values = p_vals
 
         ocp.solver_options.N_horizon = n_horizon
@@ -364,6 +369,8 @@ def run_lqr_eval():
         t_start = time.perf_counter()
         for x0 in x0_batch:
             solver.reset()
+            solver.set(0, "lbx", x0)
+            solver.set(0, "ubx", x0)
             solver.set(0, "x", x0)
             solver.solve()
             solver.setup_qp_matrices_and_factorize()

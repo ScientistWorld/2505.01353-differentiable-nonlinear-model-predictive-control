@@ -1,18 +1,23 @@
 #!/bin/bash
-# CPU-only split-evaluation job for the frozen reproduction artifact.
+# CPU-only end-to-end reproduction and split-evaluation job.
 
 set -euo pipefail
 
 cd /home/user
 
 echo "========================================"
-echo "ACADOS DIFFERENTIABLE MPC - SPLIT EVAL"
+echo "ACADOS DIFFERENTIABLE MPC - REPRODUCTION"
 echo "========================================"
 
-if [ ! -f /home/user/checkpoints/reproduction_results.json ]; then
-    echo "ERROR: missing /home/user/checkpoints/reproduction_results.json"
-    exit 1
+if [ ! -f /home/user/method/acados/lib/libacados.so ]; then
+    echo ""
+    echo ">>> acados library missing; building from local source..."
+    bash /home/user/scripts/build_acados.sh
 fi
+
+echo ""
+echo ">>> Running method to regenerate reproduction artifact..."
+bash /home/user/scripts/method.sh
 
 echo ""
 echo ">>> Running visible train-slice evaluation..."

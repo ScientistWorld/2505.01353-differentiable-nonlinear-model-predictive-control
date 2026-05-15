@@ -2,7 +2,8 @@
 
 ## Final Status
 
-- Final milestone: `core_claim`
+- Current milestone: `method_runs`
+- 2026-05-15 audit update: a new implementation audit found that the inherited LQR timing path did not impose the paper's stage-0 equality constraint for each batch element and did not use the packed `H` matrix as a symbolic parameter in the cost. I fixed both issues in `method/run_reproduction.py` and changed `scripts/run.sh` to regenerate method artifacts before scoring. The corrected LQR numbers are not claimed until the submitted CPU job finishes.
 - 2026-05-15 continuation audit: accepted the reset audit state, re-read the implementation and evaluator, and restored `core_claim`. The method is a real acados-based implementation of the paper's differentiable NMPC sensitivity computation, not a surrogate. `bash scripts/evaluate.sh` and `python3 validate.py --compare` both pass locally, and the previous compute-node run `58199a5f-9c0` remains the validated end-to-end reproduction run.
 - 2026-04-11 final audit: re-checked the authoritative method code, packaged scripts, successful compute-node logs, and scored artifacts. The packaged pendulum experiment uses the full Appendix A.10 benchmark formulation implemented in `method/run_reproduction.py`.
 - 2026-04-11 successful compute validation: CPU smoke-test job `58199a5f-9c0` finished with return code 0 and executed the full packaged path inside the container: runtime bootstrap, clean acados rebuild, shared-library preload, `method/run_reproduction.py`, and `eval/evaluator.py`. Fresh outputs were written to `checkpoints/reproduction_results.json` and `scoring/scores.json`.
@@ -23,6 +24,7 @@
 
 - acados built from source with HPIPM, BLASFEO, qpOASES
 - All shell scripts functional: download.sh, method.sh, reproduce.sh, baseline.sh, evaluate.sh, run.sh
+- `scripts/run.sh` now calls the method path before split evaluation, so a submitted job does not score a stale artifact.
 - `scripts/reproduce.sh` now runs the acados method producer before calling the reusable evaluator, so a stale `scoring/scores.json` is not the only reproduction path.
 - Environment: container.def (CUDA base), setup.sh (Python deps)
 - `method/run_reproduction.py`: authoritative method path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
@@ -55,7 +57,8 @@
 ## Remaining
 
 - Secondary claims remain outside the packaged evaluator: the Section 5.3 chain benchmark is exploratory and is not part of the authoritative evaluation path.
-- The LQR timing experiments remain informative constraint benchmarks rather than a fully stabilized reproduction of the paper's timing table.
+- Run the corrected end-to-end method job and inspect the new LQR timings after enforcing `x_0 = x0_batch[i]` and parameterizing `H`.
+- The LQR timing experiments are constraint benchmarks; runtime interpretation remains hardware-dependent.
 
 ## Issues
 
@@ -63,6 +66,7 @@
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
 - Temporary generated files may appear when acados regenerates C code during evaluation
+- 2026-05-15 LQR audit: previous LQR artifacts were stale after the benchmark fix and should not be used to claim the corrected constraint benchmark. The next submitted job regenerates them.
 - 2026-04-10 packaging audit found that `scripts/evaluate.sh` had been changed to score `checkpoints/reproduction_results.json`, while the script chain did not reliably regenerate that artifact. Fixed the chain so `scripts/method.sh` runs `method/run_reproduction.py`, then `scripts/evaluate.sh` scores the generated artifact.
 - 2026-04-10 dependency audit found that `method/acados` was recorded as a gitlink without a `.gitmodules` entry. Added the mapping and made `scripts/download.sh` avoid invoking git update commands on a pre-populated acados directory that has no nested `.git`.
 - 2026-04-10 setup failure: `uv pip install --system` triggered a root-mapped fakeroot IPC error after package resolution. The workaround is to use `python3 -m pip install` in `environment/setup.sh` for this environment.
@@ -77,12 +81,13 @@
 
 ## Pending Job
 
-- No pending jobs. The final CPU smoke-test job `58199a5f-9c0` completed successfully on 2026-04-11 and validated the packaged environment on cluster hardware.
+- Submitting a CPU test job to run `scripts/run.sh`, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected benchmark.
 
 ## Deviations from Paper
 
 - The packaged pendulum evaluator follows the paper's Appendix A.10 formulation in the current authoritative method code: `N=50`, `T=2.0`, and the inequality `-1.5 <= p * theta <= 1.5`.
 - The Section 5.2 benchmark code uses the paper's `n_batch=128`, but the packaged reproduction still reports timings from this local environment rather than a hardware-matched rerun of the paper's exact CPU platform.
+- The corrected Section 5.2 benchmark now enforces the paper's stage-0 equality constraint per batch member and treats `A`, `B`, `b`, and `H` as `p_global` parameters. Corrected timings are pending compute validation.
 - The LQR evaluator previously double-counted solve time when reporting "solution + adjoint sensitivity" timing; this has been corrected in the packaged evaluator.
 - No comparison against mpc.pytorch or cvxpygen baselines
 - Chain of masses example (Section 5.3) not included in evaluator
