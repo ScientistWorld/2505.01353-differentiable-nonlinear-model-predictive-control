@@ -3,6 +3,7 @@
 ## Final Status
 
 - Current milestone: `method_runs`
+- 2026-05-15 continuation audit: reviewed `method/`, `eval/`, scripts, scoring docs, and current artifacts. The implementation is still a real reproduction of the paper's differentiable NMPC sensitivity computation, not a surrogate, and evaluator import separation passes. However, the available checkpoint and score artifacts are timestamped before the LQR correction, so the corrected benchmark is not yet validated and `core_claim` remains pending.
 - 2026-05-15 audit update: a new implementation audit found that the inherited LQR timing path did not impose the paper's stage-0 equality constraint for each batch element and did not use the packed `H` matrix as a symbolic parameter in the cost. I fixed both issues in `method/run_reproduction.py` and changed `scripts/run.sh` to regenerate method artifacts before scoring. The corrected LQR numbers are not claimed until the submitted CPU job finishes.
 - 2026-05-15 continuation audit: accepted the reset audit state, re-read the implementation and evaluator, and restored `core_claim`. The method is a real acados-based implementation of the paper's differentiable NMPC sensitivity computation, not a surrogate. `bash scripts/evaluate.sh` and `python3 validate.py --compare` both pass locally, and the previous compute-node run `58199a5f-9c0` remains the validated end-to-end reproduction run.
 - 2026-04-11 final audit: re-checked the authoritative method code, packaged scripts, successful compute-node logs, and scored artifacts. The packaged pendulum experiment uses the full Appendix A.10 benchmark formulation implemented in `method/run_reproduction.py`.
@@ -81,7 +82,7 @@
 
 ## Pending Job
 
-- Submitting a CPU test job to run `scripts/run.sh`, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected benchmark.
+- Submitting a CPU test job to run `scripts/run.sh`, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected benchmark. The previous artifact currently visible in the workspace is stale relative to the LQR fix.
 
 ## Deviations from Paper
 

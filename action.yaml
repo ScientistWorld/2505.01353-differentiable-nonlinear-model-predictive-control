@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: method_runs
-notes: "Run corrected end-to-end CPU reproduction: regenerate method artifacts, enforce LQR x0 equality and H parameterization, then score train/test splits."
+notes: "Continuation audit found only stale pre-fix artifacts. Run corrected end-to-end CPU reproduction: regenerate method outputs with LQR x0 equality and H parameterization, then score train/test splits."

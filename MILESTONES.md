@@ -10,5 +10,10 @@
 - Updated `scripts/run.sh` so submitted jobs regenerate `checkpoints/reproduction_results.json` through `scripts/method.sh` before scoring train/test slices.
 - Local syntax checks and `python3 validate.py --compare` pass; corrected end-to-end method results are pending a compute job.
 
+### [2026-05-15 16:33] - method_runs
+- Continued audit after handoff. The method path still implements the paper's actual acados IFT/IPM sensitivity workflow, and `eval/` remains method-independent.
+- Existing `checkpoints/reproduction_results.json` and `scoring/scores.json` predate the LQR fix, so `core_claim` is not restored from stale artifacts.
+- `python3 validate.py --compare` passes structurally on the stale artifact; submitting the corrected end-to-end CPU job again to regenerate and score fresh results.
+
 ## Stop Justification
 - Not stopped. Corrected benchmark is being submitted for compute-node validation.
