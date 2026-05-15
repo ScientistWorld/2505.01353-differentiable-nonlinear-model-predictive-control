@@ -1,8 +1,8 @@
 # IMPORTANT: Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends. Sleeping blocks the entire pipeline.
-action: submit
+action: done
 gpus: 0
 test: true
-milestone: method_runs
-notes: "Retry pendulum core-claim run after adding a dynamics-consistent RK4 warm start and smaller partial-condensing blocks to recover nondegenerate nominal sensitivities."
+milestone: core_claim
+notes: "Fresh compute-node run 6c53c2a5-7ad reproduced the core pendulum exact-Hessian sensitivity claim: exact error 3.5699e-05 vs Gauss-Newton error 46.542, with validate.py --compare passing."

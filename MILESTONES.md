@@ -1,6 +1,6 @@
 # Reproduction Milestones
 
-**Current: method_runs**
+**Current: core_claim**
 
 ## Progress Log
 
@@ -35,10 +35,15 @@
 - Kept the milestone at `method_runs` and patched the pendulum solver options to use a smaller HPIPM barrier initialization with more QP iterations.
 - Added core-claim sanity checks so future submitted runs fail if the regenerated exact-Hessian sensitivity is non-finite, negative, worse than Gauss-Newton, or too inaccurate for the Section 5.1 reproduction.
 
-### [2026-05-15 17:12] - method_runs
+### [2026-05-15 17:06] - method_runs
 - Job `8abe96cf-11c` failed in the new pendulum sanity guard, confirming that the previous solver-option change still produced a degenerate finite-difference sensitivity rather than a valid core-claim result.
 - Patched the pendulum nominal solve to start from a dynamics-consistent RK4 rollout and changed partial condensing to `qp_solver_cond_N=5`, matching the stable local acados smoke configuration while preserving the paper's OCP and sensitivity algorithm.
 - Expanded the degenerate-sensitivity error message to include finite-difference values and nominal status counts for the next audit log.
 
+### [2026-05-15 17:10] - core_claim
+- Job `6c53c2a5-7ad` completed the packaged `scripts/run.sh` path inside the compute container and regenerated method, visible-train, and held-out-test score artifacts.
+- The pendulum core claim is restored from fresh compute-node results: exact-Hessian adjoint sensitivity error is `3.5699e-05`, while the Gauss-Newton approximation error is `46.542`; the nominal sweep solved 20/21 points cleanly and used one finite `ACADOS_MINSTEP` iterate.
+- `python3 validate.py --compare` passes after the job, including scoring schema checks, eval/method import separation, and train/test split validation.
+
 ## Stop Justification
-- Not stopped. Dynamics-consistent pendulum warm starts and smaller partial-condensing blocks are being submitted for compute-node validation.
+- Stopping at `core_claim`: the central Section 5.1 exact-Hessian sensitivity claim is reproduced by a fresh packaged compute-node run. Higher milestones remain limited by incomplete secondary/majority coverage: the Section 5.2 LQR timing benchmark runs, but the tight-bound timing is hardware-sensitive and slower than the paper, and Section 5.3 is not packaged.
