@@ -2,35 +2,28 @@
 
 ## Initial Assessment
 
-The claimed milestone `core_claim` was justified when I started. The packaged workspace already had a successful compute-node run, valid `scores.json`, and clean separation between `eval/` and `method/`.
+The workspace started at milestone `core_claim`. That milestone is justified: the compute-node run regenerated the method artifact through `scripts/run.sh`, and the pendulum sensitivity experiment supports the paper's central claim. The exact-Hessian sensitivity error is `3.5699e-05`, while the Gauss-Newton approximation error is `46.542`.
 
-The main problems were gym-facing rather than algorithmic:
-
-- the workspace root contained many generated and throwaway files
-- `scoring/EXPERIMENTS.md` was still an unfilled template
-- the benchmark guidance files mixed in solver-specific details and stale pendulum-setup wording that were not appropriate for from-scratch scientist agents
+The method implementation is a real acados-based reproduction of the paper's differentiable nonlinear MPC sensitivity workflow, not a surrogate. The evaluator reads method artifacts and does not import from `method/`.
 
 ## Issues Found
 
-- Minor: workspace root contained generated JSON files, debug logs, scratch scripts, and temporary test artifacts that did not belong in the delivered gym root.
-- Minor: `scoring/EXPERIMENTS.md` was still a template stub instead of a usable experiment guide.
-- Minor: `briefing/problem.md`, `briefing/evaluation.md`, and the scoring guidance files needed clearer method-agnostic wording for from-scratch use.
-- Minor: `PROGRESS.md` had stale wording from an earlier audit and no longer matched the current authoritative pendulum setup in `method/run_reproduction.py`.
-- Minor: empty top-level `trajectory/` directory could not be moved because it is busy in this environment, but it does not affect the packaged workflow.
+- **Minor**: The bounded-LQR wall-clock timing entries were described as efficiency targets in some docs. Their metric coefficients were already zero, but the wording could mislead future scientist agents into treating hardware-dependent runtime as a scored objective.
+- **Minor**: A stale generated `c_generated_code/` directory remained at the workspace root after the method was redirected to `tmp/acados_generated/`.
+- **Cosmetic/system**: The harness-managed `trajectory/` files appear deleted in this environment because they are mounted read-only. They are not part of the research gym deliverable.
 
 ## Fixes Applied
 
-- Rewrote [problem.md](/home/user/briefing/problem.md) and [evaluation.md](/home/user/briefing/evaluation.md) so they describe the benchmark problem and metrics without exposing the reproduced method.
-- Filled in [EXPERIMENTS.md](/home/user/scoring/EXPERIMENTS.md) and rewrote [TARGETS.md](/home/user/scoring/TARGETS.md), [CONSTRAINTS.md](/home/user/scoring/CONSTRAINTS.md), and [DIRECTION.md](/home/user/scoring/DIRECTION.md) to be benchmark-facing, method-safe, and aligned with the scored experiments.
-- Corrected [PROGRESS.md](/home/user/PROGRESS.md) so its pendulum setup description matches the current authoritative method code.
-- Moved obvious generated and scratch root files into `/home/user/tmp/verification_cleanup/` and removed the root `__pycache__`. Also moved the unused top-level `examples/` directory into that cleanup area.
-- Re-ran `python3 validate.py` and `python3 validate.py --compare`; both passed after the documentation and cleanup changes.
+- Clarified `briefing/problem.md`, `briefing/evaluation.md`, `scoring/EXPERIMENTS.md`, `scoring/TARGETS.md`, `scoring/CONSTRAINTS.md`, and `scoring/DIRECTION.md` so LQR timing is documented as context-only with zero scoring coefficients.
+- Updated `scoring/reference.json` descriptions to make the hardware-dependent timing metrics explicitly unscored while keeping the validator-compatible tiny experiment weights.
+- Removed the stale root-level generated `c_generated_code/` directory.
+- Marked the read-only harness trajectory paths skip-worktree locally so git status reflects the reproducible workspace files.
 
 ## Final Judgment
 
-The workspace is ready to serve as a gym. A future scientist can use the method-agnostic problem/evaluation/scoring documents in from-scratch mode, and the packaged reproduction remains intact for improve mode.
+The workspace is ready to serve as a research gym. Improve-mode agents can use the method code and reproduced artifacts, while from-scratch agents can rely on the method-agnostic problem, data, evaluation, and scoring docs without seeing the paper's implementation details. The main limitation is scope: the scored gym centers on the pendulum sensitivity accuracy claim, while LQR timing is retained only as diagnostic context because wall-clock speed is not portable across hardware.
 
 - Milestone: core_claim
 - Ready for gym use: yes
 - Confidence: high
-- Key limitation: the packaged gym is strongest on the core pendulum sensitivity claim; secondary results beyond the two LQR timing benchmarks are not part of the scored evaluation path.
+- Key limitation: only the core pendulum sensitivity claim is scored; bounded-LQR timing is diagnostic context only.

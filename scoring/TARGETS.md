@@ -10,14 +10,14 @@
 - **Why it matters**: This is the core scientific claim of the workspace. A method that improves the gym should reduce sensitivity error here without making the benchmark easier.
 - **Score entry**: `scores.json -> experiments -> pendulum_sensitivity_accuracy`
 
-## Constraint Targets
+## Context Diagnostics
 
 ### Experiment: `bounded_lqr_umax_high`
 
 - **What it tests**: Solve-plus-sensitivity runtime on the loose-bound batched LQR benchmark.
 - **Primary metric**: `solve_and_sens_time_ms`
 - **Direction**: Lower is better.
-- **Why it matters**: Improvement should not come only from accuracy; the benchmark also values practical runtime.
+- **Why it matters**: The paper reports practical runtime, so the workspace preserves the workload for auditability. Its metrics have zero scoring coefficients because wall-clock time is not comparable across ResearchGym hardware.
 - **Score entry**: `scores.json -> experiments -> bounded_lqr_umax_high`
 
 ### Experiment: `bounded_lqr_umax_low`
@@ -25,5 +25,5 @@
 - **What it tests**: Solve-plus-sensitivity runtime on the tight-bound batched LQR benchmark.
 - **Primary metric**: `solve_and_sens_time_ms`
 - **Direction**: Lower is better.
-- **Why it matters**: This captures efficiency under a more constrained setting, which is closer to the hard case for this benchmark family.
+- **Why it matters**: This captures runtime behavior under a more constrained setting for context. Its metrics have zero scoring coefficients because wall-clock time is not comparable across ResearchGym hardware.
 - **Score entry**: `scores.json -> experiments -> bounded_lqr_umax_low`

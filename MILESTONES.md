@@ -50,5 +50,10 @@
 - Redirected future acados generated C code and solver JSON files from the workspace root to `tmp/acados_generated/`, and removed the previously tracked generated artifacts from version control.
 - Updated `scripts/run.sh` to regenerate `checkpoints/reproduction_results.json` before split evaluation, then re-ran `bash scripts/evaluate.sh` and `python3 validate.py --compare` successfully.
 
+### [2026-05-15 17:51] - core_claim
+- Completed final verification of the research gym packaging.
+- Clarified that bounded-LQR wall-clock timing is diagnostic-only with zero scoring coefficients, while the scored gym target remains pendulum sensitivity accuracy.
+- Re-ran `bash scripts/evaluate.sh` and `python3 validate.py --compare`; both pass.
+
 ## Stop Justification
 - Completed at milestone `core_claim`.

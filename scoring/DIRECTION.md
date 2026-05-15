@@ -2,12 +2,11 @@
 
 ## In Scope
 
-The gym is about **computing useful sensitivities for parameterized optimal control problems** while keeping runtime practical. Strong follow-up work should improve one or both of these:
+The gym is about **computing useful sensitivities for parameterized optimal control problems** while keeping the benchmark workload fixed. Strong follow-up work should primarily improve this scored target:
 
 - Lower sensitivity error on `pendulum_sensitivity_accuracy`
-- Lower solve-plus-sensitivity time on the two bounded-LQR experiments
 
-Valid directions include better numerical stability, better solver engineering, more efficient sensitivity computation, or more robust handling of constrained operating points, as long as the benchmark problems and score definitions stay fixed.
+The bounded-LQR entries record solve-plus-sensitivity runtime for context, but they are not part of the composite score because wall-clock time is hardware-dependent. Valid directions include better numerical stability, better solver engineering, more efficient sensitivity computation, or more robust handling of constrained operating points, as long as the benchmark problems and score definitions stay fixed.
 
 ## Out of Scope
 

@@ -14,7 +14,7 @@ The task is challenging for three reasons:
 
 1. The optimization problems are constrained and can become nonsmooth when the active set changes.
 2. The parameter can affect several parts of the problem at once, including dynamics, costs, and inequalities.
-3. A usable method must balance two goals at the same time: sensitivity accuracy and runtime efficiency.
+3. A usable method must balance sensitivity accuracy with practical computational cost, although the packaged gym scores only hardware-independent accuracy metrics.
 
 ## Success Criteria
 
@@ -22,5 +22,5 @@ A strong solution for this benchmark should satisfy all of the following:
 
 1. **Accurate sensitivities**: The reported local sensitivities should agree closely with finite-difference reference values on the nonlinear pendulum benchmark.
 2. **Constraint-aware behavior**: The method should remain meaningful near regions where constraints switch activity.
-3. **Practical efficiency**: On the batched bounded-LQR timing benchmarks, solve-plus-sensitivity time should remain low enough to support differentiable control use cases.
+3. **Practical efficiency context**: On the batched bounded-LQR timing diagnostics, solve-plus-sensitivity time should remain interpretable for audit purposes, while scored comparisons avoid hardware-dependent wall-clock metrics.
 4. **Reusable output**: The method must produce results in the format expected by the workspace evaluator so that different approaches can be compared fairly.
