@@ -125,7 +125,7 @@ def _test_scores(scores: dict, method_index: dict[str, list[str]]) -> dict:
         )
         output["experiments"]["pendulum_sensitivity_accuracy"]["results"][method_name] = {
             "log10_sensitivity_advantage_vs_gn": math.log10((gn_err + EPS) / (err + EPS)),
-            "log10_gn_vs_exact_ratio": math.log10((exact_err + EPS) / (err + EPS)),
+            "log10_error_regression_vs_exact": math.log10((err + EPS) / (exact_err + EPS)),
         }
 
     high_times = {}

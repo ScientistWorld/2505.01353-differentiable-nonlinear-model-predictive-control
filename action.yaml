@@ -2,8 +2,8 @@
 # Once you set action to 'done', STOP immediately.
 # Do NOT sleep, poll, or wait. The system reads this file
 # only after your turn ends.
-action: pending
+action: done
 gpus: 0
 test: false
 milestone: core_claim
-notes: ""
+notes: "Improvements: fixed held-out pendulum ratio direction, aligned reference metrics with train/test outputs, removed uncomputed active speedup metrics, documented residual timing risks. Notes: bash -n passed for both split scripts; no scores_train/scores_test stubs present."
