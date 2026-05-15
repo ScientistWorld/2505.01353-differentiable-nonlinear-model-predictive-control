@@ -1,4 +1,8 @@
-action: done
-gpus: 0
-milestone: core_claim
-notes: "Core claim is reproduced and validated on compute hardware: the packaged exact-Hessian pendulum method scores 0.0025974539 max sensitivity error versus 2.2001354963 for the Gauss-Newton approximation, with LQR timing benchmarks of 28.4525 ms and 34.3578 ms. Split evaluation also ran and filled 4 train metrics + 5 test metrics, but that gym split is not shippable because every test metric is a deterministic transform of the visible 4-scalar artifact; a genuine held-out slice would require a richer method artifact/interface."
+# IMPORTANT: Once you set action to 'submit' or 'done', STOP immediately.
+# Do NOT sleep, poll, or wait for jobs. The system reads this file
+# only after your turn ends. Sleeping blocks the entire pipeline.
+action: pending
+gpus: 1
+test: false
+milestone: none
+notes: ""

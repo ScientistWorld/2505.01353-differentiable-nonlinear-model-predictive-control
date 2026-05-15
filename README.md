@@ -1125,7 +1125,7 @@ The workspace evaluates candidate methods on one accuracy-focused experiment and
 
 # Reproduction Milestones
 
-**Current: core_claim**
+**Current: none**
 
 ## Stop Justification
-- Completed at milestone `core_claim`.
+- Completed at milestone `none`.
