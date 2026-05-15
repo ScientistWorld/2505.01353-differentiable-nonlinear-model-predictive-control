@@ -5,4 +5,4 @@ action: done
 gpus: 0
 test: false
 milestone: core_claim
-notes: "Final verification passed. Gym is ready at core_claim; LQR wall-clock metrics are documented as diagnostic-only and validate.py --compare passes."
+notes: "Reactivation audit passed with paper and implementation subagents plus local validate.py --compare. Gym remains ready at core_claim; Section 5.3 is not claimed because it is not packaged as an authoritative scored experiment."

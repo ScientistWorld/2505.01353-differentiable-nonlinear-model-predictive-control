@@ -55,5 +55,11 @@
 - Clarified that bounded-LQR wall-clock timing is diagnostic-only with zero scoring coefficients, while the scored gym target remains pendulum sensitivity accuracy.
 - Re-ran `bash scripts/evaluate.sh` and `python3 validate.py --compare`; both pass.
 
+### [2026-05-15 17:57] - core_claim
+- Reactivation audit used two subagents: one re-extracted the paper algorithm and experiments, and one inspected the packaged implementation and scorer.
+- Confirmed the authoritative path still implements the paper's actual acados IFT/IPM sensitivity workflow: nominal solve, exact-Hessian factorization, and adjoint sensitivity evaluation against finite differences.
+- Re-ran `python3 validate.py --compare`; all schema, import-separation, split-score, and scoring checks pass.
+- Left the milestone at `core_claim` because Section 5.3 chain sensitivities remain exploratory and are not packaged as an authoritative scored experiment.
+
 ## Stop Justification
 - Completed at milestone `core_claim`.
