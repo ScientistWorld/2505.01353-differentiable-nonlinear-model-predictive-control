@@ -3,4 +3,4 @@
 # only after your turn ends. Sleeping blocks the entire pipeline.
 action: done
 milestone: core_claim
-notes: "Validation passes. Core claim reproduced: exact-Hessian sensitivity error 0.0026, Gauss-Newton error 2.2. Train/test split complete."
+notes: "Continuation audit restored core_claim. Method is real acados SQP/IPM sensitivity implementation; scripts/evaluate.sh and validate.py --compare pass."

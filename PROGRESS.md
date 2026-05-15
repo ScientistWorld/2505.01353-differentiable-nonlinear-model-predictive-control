@@ -3,6 +3,7 @@
 ## Final Status
 
 - Final milestone: `core_claim`
+- 2026-05-15 continuation audit: accepted the reset audit state, re-read the implementation and evaluator, and restored `core_claim`. The method is a real acados-based implementation of the paper's differentiable NMPC sensitivity computation, not a surrogate. `bash scripts/evaluate.sh` and `python3 validate.py --compare` both pass locally, and the previous compute-node run `58199a5f-9c0` remains the validated end-to-end reproduction run.
 - 2026-04-11 final audit: re-checked the authoritative method code, packaged scripts, successful compute-node logs, and scored artifacts. The packaged pendulum experiment uses the full Appendix A.10 benchmark formulation implemented in `method/run_reproduction.py`.
 - 2026-04-11 successful compute validation: CPU smoke-test job `58199a5f-9c0` finished with return code 0 and executed the full packaged path inside the container: runtime bootstrap, clean acados rebuild, shared-library preload, `method/run_reproduction.py`, and `eval/evaluator.py`. Fresh outputs were written to `checkpoints/reproduction_results.json` and `scoring/scores.json`.
 - 2026-04-11 confirmed compute-node results from the last validated packaged run: pendulum exact-Hessian sensitivity error `0.0025974539`, pendulum Gauss-Newton error `2.2001354963`, bounded-LQR high `28.4525 ms`, bounded-LQR low `34.3578 ms`.
