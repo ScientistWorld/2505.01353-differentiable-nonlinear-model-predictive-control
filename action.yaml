@@ -5,4 +5,4 @@ action: done
 gpus: 0
 test: true
 milestone: core_claim
-notes: "Fresh compute-node run 6c53c2a5-7ad reproduced the core pendulum exact-Hessian sensitivity claim: exact error 3.5699e-05 vs Gauss-Newton error 46.542, with validate.py --compare passing."
+notes: "Fresh compute-node run 6c53c2a5-7ad reproduced the core pendulum exact-Hessian sensitivity claim. Corrected reference.json to stop treating an earlier-agent Gauss-Newton estimate as a paper-reported number; validate.py now passes."

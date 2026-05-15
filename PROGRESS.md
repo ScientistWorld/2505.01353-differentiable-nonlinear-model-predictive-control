@@ -52,7 +52,7 @@
 | Experiment | Metric | Reproduced | Paper |
 |---|---|---|---|
 | pendulum (EXACT) | sensitivity_max_error | 0.0000357 | 0.003 |
-| pendulum (GN) | sensitivity_max_error | 46.542 | 2.2 |
+| pendulum (GN) | sensitivity_max_error | 46.542 | Figure 2 qualitative: much worse than FD |
 | bounded_lqr_umax_high | solve_and_sens_time_ms | 33.04 | 34.5 |
 | bounded_lqr_umax_low | solve_and_sens_time_ms | 82.35 | 42.0 |
 
