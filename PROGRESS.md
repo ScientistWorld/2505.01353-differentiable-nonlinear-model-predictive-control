@@ -3,6 +3,7 @@
 ## Final Status
 
 - Current milestone: `method_runs`
+- 2026-05-15 job `e7e3072e-d55`: failed during startup while importing acados dependencies. The compute container loaded vendored SciPy, which imported vendored NumPy; NumPy failed because `numpy/ma/core.py` was absent from the extracted wheel tree. Root cause was the repository's broad `core.*` ignore rule. Fixed by restoring `numpy/ma/core.py` and `core.pyi` from the local wheel, adding targeted `.gitignore` exceptions, and adding `scripts/repair_vendor_runtime.sh` to verify/repair the offline vendored runtime before method execution.
 - 2026-05-15 continuation audit: reviewed `method/`, `eval/`, scripts, scoring docs, and current artifacts. The implementation is still a real reproduction of the paper's differentiable NMPC sensitivity computation, not a surrogate, and evaluator import separation passes. However, the available checkpoint and score artifacts are timestamped before the LQR correction, so the corrected benchmark is not yet validated and `core_claim` remains pending.
 - 2026-05-15 audit update: a new implementation audit found that the inherited LQR timing path did not impose the paper's stage-0 equality constraint for each batch element and did not use the packed `H` matrix as a symbolic parameter in the cost. I fixed both issues in `method/run_reproduction.py` and changed `scripts/run.sh` to regenerate method artifacts before scoring. The corrected LQR numbers are not claimed until the submitted CPU job finishes.
 - 2026-05-15 continuation audit: accepted the reset audit state, re-read the implementation and evaluator, and restored `core_claim`. The method is a real acados-based implementation of the paper's differentiable NMPC sensitivity computation, not a surrogate. `bash scripts/evaluate.sh` and `python3 validate.py --compare` both pass locally, and the previous compute-node run `58199a5f-9c0` remains the validated end-to-end reproduction run.
@@ -63,6 +64,7 @@
 
 ## Issues
 
+- Job `e7e3072e-d55` failed before any method metrics were regenerated due to the missing vendored NumPy `numpy/ma/core.py` file. Fixed in the runtime packaging path; no algorithmic result was produced by that failed job.
 - LQR timing varies noticeably across reruns, so the current timing benchmark is less stable than the pendulum sensitivity result
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
@@ -82,7 +84,7 @@
 
 ## Pending Job
 
-- Submitting a CPU test job to run `scripts/run.sh`, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected benchmark. The previous artifact currently visible in the workspace is stale relative to the LQR fix.
+- Resubmitting a CPU test job to run `scripts/run.sh`, repair/validate the vendored runtime, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected benchmark. The previous artifact currently visible in the workspace is stale relative to the LQR fix.
 
 ## Deviations from Paper
 

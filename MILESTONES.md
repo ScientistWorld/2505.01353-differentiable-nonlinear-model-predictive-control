@@ -15,5 +15,10 @@
 - Existing `checkpoints/reproduction_results.json` and `scoring/scores.json` predate the LQR fix, so `core_claim` is not restored from stale artifacts.
 - `python3 validate.py --compare` passes structurally on the stale artifact; submitting the corrected end-to-end CPU job again to regenerate and score fresh results.
 
+### [2026-05-15 16:39] - method_runs
+- Job `e7e3072e-d55` failed before the method ran because the vendored NumPy tree was missing `numpy/ma/core.py`; the broad `core.*` ignore rule had omitted that wheel file from the workspace.
+- Restored the missing NumPy `core.py` and `core.pyi` files from the local wheel, unignored them, and added `scripts/repair_vendor_runtime.sh` so offline compute jobs repair/validate the vendored runtime before importing acados.
+- Resubmitting the same corrected end-to-end CPU reproduction job after the environment packaging fix.
+
 ## Stop Justification
 - Not stopped. Corrected benchmark is being submitted for compute-node validation.

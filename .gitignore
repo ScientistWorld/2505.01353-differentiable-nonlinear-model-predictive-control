@@ -184,6 +184,8 @@ Thumbs.db
 
 # Core dumps
 core.*
+!environment/vendor_py310/**/numpy/ma/core.py
+!environment/vendor_py310/**/numpy/ma/core.pyi
 # Auto-added by swarm
 environment/overlay.img
 jobs/
@@ -191,6 +193,8 @@ tmp/
 protocol.md
 *.egg-info
 core.[0-9]*
+!environment/vendor_py310/**/numpy/ma/core.py
+!environment/vendor_py310/**/numpy/ma/core.pyi
 
 # Auto-added by swarm
 environment/*.tar.xz

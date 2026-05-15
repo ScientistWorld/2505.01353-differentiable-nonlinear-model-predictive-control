@@ -102,6 +102,8 @@ for wheel_path in sorted(glob.glob(os.path.join(wheel_dir, "*.whl"))):
     print(f"Extracted {os.path.basename(wheel_path)} -> {target}")
 PY
 
+bash /home/user/scripts/repair_vendor_runtime.sh
+
 echo ""
 echo "=== Download + Build Complete ==="
 echo "LD_LIBRARY_PATH should include: ${ACADOS_DIR}/lib"
