@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 
 DEFAULT_INPUT = "/home/user/checkpoints/reproduction_results.json"
@@ -45,6 +46,11 @@ def _validate_results(scores: dict) -> None:
                 raise ValueError(
                     f"Metric {experiment_name}/{method_name}/{metric_name} "
                     "must be numeric"
+                )
+            if not math.isfinite(float(value)) or float(value) < 0.0:
+                raise ValueError(
+                    f"Metric {experiment_name}/{method_name}/{metric_name} "
+                    "must be finite and nonnegative"
                 )
 
 

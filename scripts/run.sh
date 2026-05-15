@@ -20,6 +20,37 @@ echo ">>> Running method to regenerate reproduction artifact..."
 bash /home/user/scripts/method.sh
 
 echo ""
+echo ">>> Checking regenerated core-claim artifact..."
+python3 - <<'PY'
+import json
+import math
+from pathlib import Path
+
+artifact = Path("/home/user/checkpoints/reproduction_results.json")
+scores = json.loads(artifact.read_text())
+pendulum = scores["experiments"]["pendulum_sensitivity_accuracy"]["results"]
+exact = float(pendulum["acados_exact_hessian"]["sensitivity_max_error"])
+gn = float(pendulum["gauss_newton_approx"]["sensitivity_max_error"])
+
+if not (math.isfinite(exact) and math.isfinite(gn)):
+    raise SystemExit(f"Non-finite pendulum sensitivity metrics: exact={exact}, gn={gn}")
+if exact < 0.0 or gn < 0.0:
+    raise SystemExit(f"Negative pendulum sensitivity metrics: exact={exact}, gn={gn}")
+if exact >= gn:
+    raise SystemExit(
+        "Core claim not supported: exact-Hessian sensitivity error is not "
+        f"smaller than Gauss-Newton (exact={exact}, gn={gn})"
+    )
+if exact > 0.1:
+    raise SystemExit(
+        "Core claim not supported: exact-Hessian sensitivity error is too large "
+        f"for the Section 5.1 reproduction (exact={exact})"
+    )
+
+print(f"core_claim_artifact_valid=true exact_error={exact:.6g} gn_error={gn:.6g}")
+PY
+
+echo ""
 echo ">>> Running visible train-slice evaluation..."
 bash /home/user/scripts/evaluate_train.sh
 

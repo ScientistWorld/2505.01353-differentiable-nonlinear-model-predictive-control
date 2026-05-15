@@ -117,7 +117,15 @@ def _build_pendulum_ocp(components, *, hessian_approx: str, name: str):
     ocp.solver_options.qp_solver_cond_N = components["n_horizon"]
     ocp.solver_options.qp_solver_ric_alg = 0
     ocp.solver_options.qp_solver_cond_ric_alg = 0
-    ocp.solver_options.qp_solver_mu0 = 1e3
+    # The Appendix A.10 pendulum problem is ill-conditioned near the path
+    # constraint.  A large initial IPM barrier parameter repeatedly produced
+    # ACADOS_MINSTEP iterates with meaningless sensitivities in this runtime.
+    # The smaller barrier initialization follows the local working acados
+    # pendulum smoke test and lets HPIPM take enough interior-point iterations
+    # to recover a useful nominal solution before sensitivity factorization.
+    ocp.solver_options.qp_solver_mu0 = 1e-3
+    ocp.solver_options.qp_solver_iter_max = 500
+    ocp.solver_options.globalization = "FIXED_STEP"
     ocp.solver_options.hessian_approx = hessian_approx
     ocp.solver_options.nlp_solver_max_iter = 400
     ocp.solver_options.tol = 1e-8
@@ -257,6 +265,19 @@ def run_pendulum_eval():
 
     max_err_exact = abs(adj_sens_exact - fd_sens_nominal)
     max_err_gn = abs(adj_sens_gn - fd_sens_nominal)
+
+    if not np.isfinite(fd_sens_nominal) or abs(fd_sens_nominal) < 1e-8:
+        raise RuntimeError(
+            "Pendulum finite-difference sensitivity is degenerate; "
+            "the nominal solve is not suitable for reproducing the sensitivity claim."
+        )
+    if not np.isfinite(max_err_exact) or not np.isfinite(max_err_gn):
+        raise RuntimeError("Pendulum sensitivity errors must be finite")
+    if max_err_exact >= max_err_gn:
+        raise RuntimeError(
+            "Exact-Hessian sensitivity is not more accurate than Gauss-Newton "
+            f"(exact_error={max_err_exact}, gn_error={max_err_gn})"
+        )
 
     status_hist = {
         str(status): nominal_statuses.count(status)

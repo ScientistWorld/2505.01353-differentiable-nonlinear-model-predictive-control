@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: true
 milestone: method_runs
-notes: "Retry after accepting finite ACADOS_MINSTEP pendulum nominal iterates for sensitivity setup while logging status histogram and rejecting non-finite values."
+notes: "Retry pendulum core-claim run after reducing HPIPM barrier initialization, increasing QP iterations, and adding sanity checks that reject degenerate or worse-than-GN exact-Hessian sensitivities."

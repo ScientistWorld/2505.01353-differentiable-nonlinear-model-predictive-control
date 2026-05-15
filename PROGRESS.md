@@ -8,6 +8,8 @@
 - 2026-05-15 pendulum fix: patched `method/run_reproduction.py` to follow the paper's Appendix A.8 two-solver workflow exactly for sensitivity evaluation: solve the nominal Gauss-Newton NLP, copy the primal-dual iterate into the exact-Hessian sensitivity solver, factorize the exact-Hessian QP, and evaluate adjoint sensitivities. The exact-Hessian solver is no longer asked to solve the NLP. The held-out evaluator now rejects negative or non-finite metrics explicitly.
 - 2026-05-15 job `2709a928-9ac`: the patched pendulum path failed before sensitivity evaluation because all nominal sweep solves returned acados status `ACADOS_MINSTEP`. The previous successful reproduction had used those finite iterates; the new guard was too strict and treated them as missing.
 - 2026-05-15 nominal status guard fix: `method/run_reproduction.py` now accepts finite status-4 pendulum iterates while still rejecting non-finite values and unexpected statuses. The method prints the nominal status histogram and the finite-difference/ref statuses so downstream auditors can see when MINSTEP iterates were used.
+- 2026-05-15 job `76839165-68a`: the packaged script path exited 0 but did not support the core claim. All pendulum nominal solves were status `ACADOS_MINSTEP`, finite-difference sensitivity was zero, exact-Hessian error was `81138.3388`, and Gauss-Newton error was `28850.3972`. These numbers are real artifacts from the run, but they are scientifically invalid for milestone restoration.
+- 2026-05-15 pendulum convergence fix: patched the pendulum OCP solver options to use a smaller HPIPM barrier initialization (`qp_solver_mu0=1e-3`) and a larger QP iteration budget. Added method-level and job-level sanity checks so the reproduction fails fast when exact-Hessian sensitivities are degenerate, non-finite, worse than Gauss-Newton, or above the Section 5.1 accuracy tolerance.
 - 2026-05-15 continuation audit: reviewed `method/`, `eval/`, scripts, scoring docs, and current artifacts. The implementation is still a real reproduction of the paper's differentiable NMPC sensitivity computation, not a surrogate, and evaluator import separation passes. However, the available checkpoint and score artifacts are timestamped before the LQR correction, so the corrected benchmark is not yet validated and `core_claim` remains pending.
 - 2026-05-15 audit update: a new implementation audit found that the inherited LQR timing path did not impose the paper's stage-0 equality constraint for each batch element and did not use the packed `H` matrix as a symbolic parameter in the cost. I fixed both issues in `method/run_reproduction.py` and changed `scripts/run.sh` to regenerate method artifacts before scoring. The corrected LQR numbers are not claimed until the submitted CPU job finishes.
 - 2026-05-15 continuation audit: accepted the reset audit state, re-read the implementation and evaluator, and restored `core_claim`. The method is a real acados-based implementation of the paper's differentiable NMPC sensitivity computation, not a surrogate. `bash scripts/evaluate.sh` and `python3 validate.py --compare` both pass locally, and the previous compute-node run `58199a5f-9c0` remains the validated end-to-end reproduction run.
@@ -35,6 +37,7 @@
 - Environment: container.def (CUDA base), setup.sh (Python deps)
 - `method/run_reproduction.py`: authoritative method path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
 - The pendulum sensitivity path now uses the paper's two-solver sensitivity pattern: nominal solve first, exact-Hessian factorization and adjoint sensitivity second.
+- The current pendulum artifact from job `76839165-68a` is rejected as a failed core-claim attempt; the next job must regenerate a nondegenerate finite-difference sensitivity with exact-Hessian error below Gauss-Newton error.
 - `eval/evaluator.py`: method-agnostic scorer for `checkpoints/reproduction_results.json`
 - `scripts/evaluate.sh` is the standard scoring entry point and writes `scoring/scores.json`
 - scoring/TARGETS.md, scoring/CONSTRAINTS.md, scoring/DIRECTION.md filled and aligned with the current evaluator configuration
@@ -45,12 +48,12 @@
 
 | Experiment | Metric | Reproduced | Paper |
 |---|---|---|---|
-| pendulum (EXACT) | sensitivity_max_error | 0.0026 | 0.01 |
-| pendulum (GN) | sensitivity_max_error | 2.2001 | 10.0 |
-| bounded_lqr_umax_high | solve_and_sens_time_ms | 28.45 | 34.5 |
-| bounded_lqr_umax_low | solve_and_sens_time_ms | 34.36 | 42.0 |
+| pendulum (EXACT) | sensitivity_max_error | 81138.3388 | 0.01 |
+| pendulum (GN) | sensitivity_max_error | 28850.3972 | 10.0 |
+| bounded_lqr_umax_high | solve_and_sens_time_ms | 31.55 | 34.5 |
+| bounded_lqr_umax_low | solve_and_sens_time_ms | 77.96 | 42.0 |
 
-**Core claim validated**: EXACT Hessian gives accurate parametric sensitivities (error 0.0026, paper 0.01). Gauss-Newton remains materially worse (error 2.20), preserving the qualitative claim that the approximate Hessian gives incorrect sensitivities relative to the exact-Hessian method.
+**Core claim not restored yet**: the latest fresh artifact fails the pendulum sensitivity claim because the nominal solver returned only `ACADOS_MINSTEP` iterates and produced a zero finite-difference sensitivity. The implementation remains method-faithful, but the solver configuration needs a converged or otherwise meaningful nominal solution before `core_claim` can be claimed again.
 
 **LQR timing**: the benchmark runs and writes real timings, but the numbers vary materially across reruns and do not consistently match the paper. This benchmark is therefore packaged as informative timing, not as the main success criterion for the reproduction.
 
@@ -72,6 +75,7 @@
 - Job `e7e3072e-d55` failed before any method metrics were regenerated due to the missing vendored NumPy `numpy/ma/core.py` file. Fixed in the runtime packaging path; no algorithmic result was produced by that failed job.
 - Job `f23c2850-d14` reached method execution but exposed a method fidelity bug in the pendulum reproduction path: it tried to solve with the exact-Hessian sensitivity solver and converted the resulting `ACADOS_MINSTEP` status into a negative sentinel. Fixed by removing that solve and using exact-Hessian factorization on the nominal iterate, matching Appendix A.8.
 - Job `2709a928-9ac` showed that the pendulum nominal solver reports `ACADOS_MINSTEP` across the sweep even though finite iterates are available. The reproduction now treats this as a usable finite stationary iterate for sensitivity setup, and logs the status distribution rather than silently counting it as a clean solve.
+- Job `76839165-68a` proved that merely accepting finite `ACADOS_MINSTEP` iterates is not sufficient: the accepted iterates generated a degenerate finite-difference derivative and enormous adjoint errors. The new method/job guards reject that condition.
 - LQR timing varies noticeably across reruns, so the current timing benchmark is less stable than the pendulum sensitivity result
 - A local smoke test showed that `solve_for_x0()` is not compatible with the current generated x0 constraint layout in this evaluator, so the repeated benchmark keeps the existing runtime `x` update path.
 - No local `mpc.pytorch` or `cvxpygen` reproduction; reference values come from the paper only
@@ -91,7 +95,7 @@
 
 ## Pending Job
 
-- Resubmitting a CPU test job to run `scripts/run.sh`, repair/validate the vendored runtime, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores for the corrected pendulum and LQR benchmark. The previous artifact currently visible in the workspace contains the invalid pendulum sentinel and must not be used for milestone restoration.
+- Resubmitting a CPU test job to run `scripts/run.sh`, repair/validate the vendored runtime, regenerate `checkpoints/reproduction_results.json`, write `scoring/scores.json`, and write split scores with the corrected pendulum solver settings. The previous artifact currently visible in the workspace contains invalid pendulum sensitivity errors and must not be used for milestone restoration.
 
 ## Deviations from Paper
 
