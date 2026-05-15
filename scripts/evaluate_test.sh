@@ -8,8 +8,6 @@ set -e
 
 cd /home/user
 
-export ACADOS_SOURCE_DIR=/home/user/method/acados
-export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
 export PYTHONNOUSERSITE=1
 
 for dep_dir in /home/user/environment/vendor_py310/*; do

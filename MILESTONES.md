@@ -61,5 +61,10 @@
 - Re-ran `python3 validate.py --compare`; all schema, import-separation, split-score, and scoring checks pass.
 - Left the milestone at `core_claim` because Section 5.3 chain sensitivities remain exploratory and are not packaged as an authoritative scored experiment.
 
+### [2026-05-15 18:02] - core_claim
+- Completed final verification for gym readiness.
+- Removed method-specific path assumptions from the evaluator shell entry points and clarified the graphical pendulum reference target in `scoring/reference.json`.
+- Re-ran `bash scripts/evaluate.sh`, `bash scripts/evaluate_train.sh`, `bash scripts/evaluate_test.sh`, and `python3 validate.py --compare`; all checks pass.
+
 ## Stop Justification
 - Completed at milestone `core_claim`.

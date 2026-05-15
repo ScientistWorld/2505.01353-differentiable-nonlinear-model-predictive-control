@@ -1,8 +1,8 @@
-# This iteration completed the split evaluation job.
+# This iteration completed final verification.
 # Do NOT sleep, poll, or wait. The system reads this file
 # only after your turn ends.
 action: done
 gpus: 0
 test: false
 milestone: core_claim
-notes: "Reactivation audit passed with paper and implementation subagents plus local validate.py --compare. Gym remains ready at core_claim; Section 5.3 is not claimed because it is not packaged as an authoritative scored experiment."
+notes: "Final verification passed: evaluator is artifact-based and method-agnostic, validation passes, and the gym is ready at core_claim."
