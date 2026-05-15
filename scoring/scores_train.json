@@ -3,24 +3,24 @@
     "pendulum_sensitivity_accuracy": {
       "results": {
         "acados_exact_hessian": {
-          "sensitivity_max_error": 81138.33880520324
+          "sensitivity_max_error": 3.5699324840265945e-05
         },
         "gauss_newton_approx": {
-          "sensitivity_max_error": 28850.39717970134
+          "sensitivity_max_error": 46.54197147092533
         }
       }
     },
     "bounded_lqr_umax_high": {
       "results": {
         "acados": {
-          "solve_and_sens_time_ms": 31.554360990412533
+          "solve_and_sens_time_ms": 33.042303984984756
         }
       }
     },
     "bounded_lqr_umax_low": {
       "results": {
         "acados": {
-          "solve_and_sens_time_ms": 77.96124002197757
+          "solve_and_sens_time_ms": 82.34844502294436
         }
       }
     }

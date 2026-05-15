@@ -3,25 +3,25 @@
     "pendulum_sensitivity_accuracy": {
       "results": {
         "acados_exact_hessian": {
-          "log10_sensitivity_advantage_vs_gn": -0.4490743154738968
+          "log10_sensitivity_advantage_vs_gn": 6.115184760809773
         },
         "gauss_newton_approx": {
-          "log10_gn_vs_exact_ratio": 0.4490743154738968
+          "log10_gn_vs_exact_ratio": -6.115184760809773
         }
       }
     },
     "bounded_lqr_umax_high": {
       "results": {
         "acados": {
-          "per_problem_solve_and_sens_ms": 0.24651844523759792
+          "per_problem_solve_and_sens_ms": 0.2581429998826934
         }
       }
     },
     "bounded_lqr_umax_low": {
       "results": {
         "acados": {
-          "per_problem_solve_and_sens_ms": 0.6090721876716998,
-          "tight_to_loose_runtime_ratio": 2.470696207274338
+          "per_problem_solve_and_sens_ms": 0.6433472267417528,
+          "tight_to_loose_runtime_ratio": 2.4922125606121637
         }
       }
     }
