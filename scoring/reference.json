@@ -64,7 +64,7 @@
       }
     },
     "pendulum_sensitivity_accuracy": {
-      "description": "Highly-parametric pendulum OCP: sensitivity accuracy vs finite differences. Cart-pole system, N=50, nx=4, nu=1, n_theta=1. Core claim: acados sensitivities match FD (error ~0.01), while Gauss-Newton Hessian gives completely wrong results (error ~10).",
+      "description": "Highly-parametric pendulum OCP: sensitivity accuracy vs finite differences. Cart-pole system, N=50, nx=4, nu=1, n_theta=1. Core claim: acados sensitivities match FD (error ~0.003), while Gauss-Newton Hessian gives materially worse results (error ~2.2).",
       "weight": 0.6,
       "primary_metric": "sensitivity_max_error",
       "metrics": {
@@ -75,11 +75,11 @@
       "results": {
         "acados_exact_hessian": {
           "type": "proposed",
-          "sensitivity_max_error": 0.01
+          "sensitivity_max_error": 0.0026
         },
         "gauss_newton_approx": {
           "type": "baseline",
-          "sensitivity_max_error": 10.0
+          "sensitivity_max_error": 2.2
         }
       }
     }
