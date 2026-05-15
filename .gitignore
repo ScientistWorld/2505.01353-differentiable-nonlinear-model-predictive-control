@@ -161,6 +161,8 @@ __pycache__/
 *.pyo
 
 # Build artifacts
+c_generated_code/
+eval_*.json
 *.o
 *.a
 *.pyd

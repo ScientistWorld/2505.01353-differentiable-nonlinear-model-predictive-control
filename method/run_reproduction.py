@@ -30,6 +30,13 @@ def _import_acados():
     return ca, AcadosModel, AcadosOcp, AcadosOcpSolver
 
 
+def _generated_path(*parts: str) -> str:
+    """Return a workspace-local generated-artifact path outside the repo root."""
+    path = os.path.join("/home/user", "tmp", "acados_generated", *parts)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
 def _build_parametric_pendulum_components():
     """Build the pendulum model and reusable constants from Appendix A.10."""
     ca, AcadosModel, AcadosOcp, AcadosOcpSolver = _import_acados()
@@ -163,6 +170,7 @@ def _build_pendulum_ocp(components, *, hessian_approx: str, name: str):
     ocp.constraints.uh = np.array([1.5])
     ocp.constraints.x0 = components["x0"]
     ocp.model.name = name
+    ocp.code_export_directory = _generated_path(name)
     return ocp
 
 
@@ -197,11 +205,11 @@ def run_pendulum_eval():
 
     solver_gn = AcadosOcpSolver(
         _build_pendulum_ocp(components, hessian_approx="GAUSS_NEWTON", name="pendulum_gn_eval"),
-        json_file="eval_pendulum_gn.json",
+        json_file=_generated_path("eval_pendulum_gn.json"),
     )
     solver_ex = AcadosOcpSolver(
         _build_pendulum_ocp(components, hessian_approx="EXACT", name="pendulum_exact_eval"),
-        json_file="eval_pendulum_exact.json",
+        json_file=_generated_path("eval_pendulum_exact.json"),
     )
 
     theta_vals = components["theta_vals"]
@@ -370,6 +378,7 @@ def run_lqr_eval():
         ocp = AcadosOcp()
         ocp.model = AcadosModel()
         ocp.model.name = f"lqr_{label}_eval"
+        ocp.code_export_directory = _generated_path(ocp.model.name)
         ocp.model.x = ca.SX.sym("x", nx)
         ocp.model.u = ca.SX.sym("u", nu)
         ocp.model.p_global = p
@@ -400,7 +409,7 @@ def run_lqr_eval():
         ocp.solver_options.nlp_solver_max_iter = 50
         ocp.solver_options.tol = 1e-6
 
-        solver = AcadosOcpSolver(ocp, json_file=f"eval_lqr_{label}.json")
+        solver = AcadosOcpSolver(ocp, json_file=_generated_path(f"eval_lqr_{label}.json"))
 
         # Measure the paper's "solution + adjoint sensitivities" path directly.
         # Keep the runtime x0 update on the generated solver interface that is

@@ -3,6 +3,7 @@
 ## Final Status
 
 - Current milestone: `core_claim`
+- 2026-05-15 packaging hardening: audited the final workspace with paper-summary and implementation-check subagents. Future acados generated C code and solver JSON files now go under `tmp/acados_generated/` instead of the repository root, and the previously tracked root generated artifacts have been removed from version control. `scripts/run.sh` now regenerates the method artifact before evaluating train/test splits, so a future submitted job no longer depends on a stale checkpoint.
 - 2026-05-15 job `e7e3072e-d55`: failed during startup while importing acados dependencies. The compute container loaded vendored SciPy, which imported vendored NumPy; NumPy failed because `numpy/ma/core.py` was absent from the extracted wheel tree. Root cause was the repository's broad `core.*` ignore rule. Fixed by restoring `numpy/ma/core.py` and `core.pyi` from the local wheel, adding targeted `.gitignore` exceptions, and adding `scripts/repair_vendor_runtime.sh` to verify/repair the offline vendored runtime before method execution.
 - 2026-05-15 job `f23c2850-d14`: the vendored runtime repair succeeded and the submitted job regenerated method artifacts, including corrected LQR timing runs. The held-out evaluator then failed because the pendulum result artifact contained `sensitivity_max_error=-1.0`, produced by a fallback path after an exact-Hessian NLP solve hit `ACADOS_MINSTEP`.
 - 2026-05-15 pendulum fix: patched `method/run_reproduction.py` to follow the paper's Appendix A.8 two-solver workflow exactly for sensitivity evaluation: solve the nominal Gauss-Newton NLP, copy the primal-dual iterate into the exact-Hessian sensitivity solver, factorize the exact-Hessian QP, and evaluate adjoint sensitivities. The exact-Hessian solver is no longer asked to solve the NLP. The held-out evaluator now rejects negative or non-finite metrics explicitly.
@@ -35,7 +36,8 @@
 
 - acados built from source with HPIPM, BLASFEO, qpOASES
 - All shell scripts functional: download.sh, method.sh, reproduce.sh, baseline.sh, evaluate.sh, run.sh
-- `scripts/run.sh` now calls the method path before split evaluation, so a submitted job does not score a stale artifact.
+- `scripts/run.sh` calls the method path before split evaluation, so a submitted job does not score a stale artifact.
+- acados generated solver code and JSON descriptors are treated as temporary artifacts under `tmp/acados_generated/`, not tracked root files.
 - `scripts/reproduce.sh` now runs the acados method producer before calling the reusable evaluator, so a stale `scoring/scores.json` is not the only reproduction path.
 - Environment: container.def (CUDA base), setup.sh (Python deps)
 - `method/run_reproduction.py`: authoritative method path for the pendulum sensitivity experiment and bounded-LQR timing benchmark
@@ -101,6 +103,12 @@
 ## Pending Job
 
 - None. The latest packaged CPU test job completed successfully and restored `core_claim`.
+
+## Final Local Checks
+
+- `python3 -m py_compile method/run_reproduction.py eval/evaluator.py eval/train/evaluator.py eval/test/evaluator.py validate.py`
+- `bash scripts/evaluate.sh`
+- `python3 validate.py --compare`
 
 ## Deviations from Paper
 

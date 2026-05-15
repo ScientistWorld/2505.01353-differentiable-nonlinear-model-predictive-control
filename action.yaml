@@ -5,4 +5,4 @@ action: done
 gpus: 0
 test: false
 milestone: core_claim
-notes: "Packaging audit passed: download.sh has executable public fetch/build commands and no shared-path references were found."
+notes: "Core claim reproduced and packaged. Final audit redirected generated acados artifacts to tmp/, made run.sh regenerate method outputs before split evaluation, and validate.py --compare passes."

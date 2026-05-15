@@ -1,5 +1,5 @@
 #!/bin/bash
-# CPU-only split-evaluation job against the frozen reproduction artifact.
+# CPU-only end-to-end job: regenerate the method artifact, then score it.
 
 set -euo pipefail
 
@@ -10,7 +10,11 @@ echo "ACADOS DIFFERENTIABLE MPC - SPLIT EVALUATION"
 echo "========================================"
 
 echo ""
-echo ">>> Checking frozen core-claim artifact..."
+echo ">>> Regenerating method artifact..."
+bash /home/user/scripts/method.sh
+
+echo ""
+echo ">>> Checking regenerated core-claim artifact..."
 python3 - <<'PY'
 import json
 import math

@@ -45,5 +45,10 @@
 - The pendulum core claim is restored from fresh compute-node results: exact-Hessian adjoint sensitivity error is `3.5699e-05`, while the Gauss-Newton approximation error is `46.542`; the nominal sweep solved 20/21 points cleanly and used one finite `ACADOS_MINSTEP` iterate.
 - `python3 validate.py --compare` passes after the job, including scoring schema checks, eval/method import separation, and train/test split validation.
 
+### [2026-05-15 17:44] - core_claim
+- Audited the final packaging state with two subagents and local validation.
+- Redirected future acados generated C code and solver JSON files from the workspace root to `tmp/acados_generated/`, and removed the previously tracked generated artifacts from version control.
+- Updated `scripts/run.sh` to regenerate `checkpoints/reproduction_results.json` before split evaluation, then re-ran `bash scripts/evaluate.sh` and `python3 validate.py --compare` successfully.
+
 ## Stop Justification
 - Completed at milestone `core_claim`.
