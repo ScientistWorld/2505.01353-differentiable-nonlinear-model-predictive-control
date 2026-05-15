@@ -15,7 +15,7 @@
 - Strengthened the pendulum anti-shortcut signal by keeping two complementary hidden ratios:
   `log10_sensitivity_advantage_vs_gn` rewards preserving the advantage over the Gauss-Newton shortcut, while `log10_error_regression_vs_exact` penalizes regressions away from the exact-Hessian method.
 - Cleaned `scoring/reference.json` so every active metric has `higher_is_better`, `coefficient`, and `description`.
-- Removed active metric definitions for `speedup_vs_mpc_pytorch` and `speedup_vs_cvxpygen` because the train/test evaluators do not compute those keys. The paper-reported result fields remain under `results.<method_name>` for context, but they are no longer scored split metrics.
+- Kept `speedup_vs_mpc_pytorch` and `speedup_vs_cvxpygen` as zero-coefficient context metrics because the validator requires every result key to be declared under `metrics`. They do not affect split scoring because the train/test evaluators do not compute them.
 - Updated coefficients for the two pendulum held-out ratio metrics to equal magnitude with opposite directions.
 
 ## Current Split Design

@@ -6,7 +6,9 @@
       "primary_metric": "solve_and_sens_time_ms",
       "metrics": {
         "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0, "description": "Visible total solve-plus-adjoint-sensitivity latency for the 128 bounded-LQR problems; lower is better but runner should treat hardware variation as a residual risk."},
-        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": -0.4, "description": "Held-out normalization of solve-plus-sensitivity time by the 128-problem batch size, catching methods that report batch totals inconsistently."}
+        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": -0.4, "description": "Held-out normalization of solve-plus-sensitivity time by the 128-problem batch size, catching methods that report batch totals inconsistently."},
+        "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against mpc.pytorch; retained for reference validation but not used for split scoring because the evaluator does not compute it."},
+        "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against cvxpygen/OSQP; retained for reference validation but not used for split scoring because the evaluator does not compute it."}
       },
       "results": {
         "acados": {
@@ -36,7 +38,9 @@
       "metrics": {
         "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0, "description": "Visible total solve-plus-adjoint-sensitivity latency for the 128 tight-bound LQR problems; lower is better but runner should treat hardware variation as a residual risk."},
         "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": -0.4, "description": "Held-out normalization of solve-plus-sensitivity time by the 128-problem batch size under the tight control bound."},
-        "tight_to_loose_runtime_ratio": {"higher_is_better": false, "coefficient": -0.3, "description": "Tight-bound runtime divided by loose-bound runtime, checking that efficiency is not tuned only to the easier loose-bound case."}
+        "tight_to_loose_runtime_ratio": {"higher_is_better": false, "coefficient": -0.3, "description": "Tight-bound runtime divided by loose-bound runtime, checking that efficiency is not tuned only to the easier loose-bound case."},
+        "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against mpc.pytorch; retained for reference validation but not used for split scoring because the evaluator does not compute it."},
+        "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against cvxpygen/OSQP; retained for reference validation but not used for split scoring because the evaluator does not compute it."}
       },
       "results": {
         "acados": {

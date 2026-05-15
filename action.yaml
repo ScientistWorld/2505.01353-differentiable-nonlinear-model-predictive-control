@@ -6,4 +6,4 @@ action: done
 gpus: 0
 test: false
 milestone: core_claim
-notes: "Improvements: fixed held-out pendulum ratio direction, aligned reference metrics with train/test outputs, removed uncomputed active speedup metrics, documented residual timing risks. Notes: bash -n passed for both split scripts; no scores_train/scores_test stubs present."
+notes: "Improvements: fixed held-out pendulum ratio direction, aligned reference metrics with train/test outputs, restored paper speedup keys as zero-coefficient context metrics for validation, documented residual timing risks. Notes: bash -n passed for both split scripts; no scores_train/scores_test stubs present."
