@@ -1,7 +1,8 @@
 # IMPORTANT: Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends. Sleeping blocks the entire pipeline.
-action: done
-gpus: 0
-milestone: core_claim
-notes: "Fixed reference.json: corrected gauss_newton_approx sensitivity_max_error from 10.0 to 2.2 to match the actual reproduced value. All validation checks pass."
+action: pending
+gpus: 1
+test: false
+milestone: method_runs
+notes: ""
