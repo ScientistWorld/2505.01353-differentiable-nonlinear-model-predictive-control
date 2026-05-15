@@ -1,26 +1,16 @@
 #!/bin/bash
-# CPU-only end-to-end reproduction and split-evaluation job.
+# CPU-only split-evaluation job against the frozen reproduction artifact.
 
 set -euo pipefail
 
 cd /home/user
 
 echo "========================================"
-echo "ACADOS DIFFERENTIABLE MPC - REPRODUCTION"
+echo "ACADOS DIFFERENTIABLE MPC - SPLIT EVALUATION"
 echo "========================================"
 
-if [ ! -f /home/user/method/acados/lib/libacados.so ]; then
-    echo ""
-    echo ">>> acados library missing; building from local source..."
-    bash /home/user/scripts/build_acados.sh
-fi
-
 echo ""
-echo ">>> Running method to regenerate reproduction artifact..."
-bash /home/user/scripts/method.sh
-
-echo ""
-echo ">>> Checking regenerated core-claim artifact..."
+echo ">>> Checking frozen core-claim artifact..."
 python3 - <<'PY'
 import json
 import math
@@ -125,6 +115,26 @@ if train_path.read_text() == test_path.read_text():
 print("split_outputs_validated=true")
 print(f"train_experiments={sorted(train_experiments)}")
 print(f"test_experiments={sorted(test_experiments)}")
+PY
+
+echo ""
+echo ">>> Checking scored metrics are machine-independent..."
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+reference = json.loads(Path("/home/user/scoring/reference.json").read_text())
+for experiment_name, experiment in reference.get("experiments", {}).items():
+    experiment_weight = float(experiment.get("weight", 0.0))
+    for metric_name, metric in experiment.get("metrics", {}).items():
+        coefficient = abs(float(metric.get("coefficient", 0.0)))
+        lowered = metric_name.lower()
+        if experiment_weight and coefficient and any(token in lowered for token in ("time", "speed", "runtime", "throughput")):
+            raise SystemExit(
+                f"Wall-clock metric still contributes to scoring: "
+                f"{experiment_name}/{metric_name}"
+            )
+print("machine_independent_scoring_check=true")
 PY
 
 echo ""

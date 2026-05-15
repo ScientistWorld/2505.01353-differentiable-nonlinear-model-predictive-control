@@ -2,11 +2,11 @@
   "experiments": {
     "bounded_lqr_umax_high": {
       "description": "Bounded LQR OCP with u_max=10^4: timing for solving n_batch=128 problems with adjoint sensitivities. N=20, nx=8, nu=4, n_theta=248. From Table 1 of the paper.",
-      "weight": 0.2,
+      "weight": 0.0,
       "primary_metric": "solve_and_sens_time_ms",
       "metrics": {
-        "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0, "description": "Visible total solve-plus-adjoint-sensitivity latency for the 128 bounded-LQR problems; lower is better but runner should treat hardware variation as a residual risk."},
-        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": -0.4, "description": "Held-out normalization of solve-plus-sensitivity time by the 128-problem batch size, catching methods that report batch totals inconsistently."},
+        "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": 0.0, "description": "Context-only wall-clock total solve-plus-adjoint-sensitivity latency for the 128 bounded-LQR problems. It is not scored because hardware varies across ResearchGym runs."},
+        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": 0.0, "description": "Context-only wall-clock latency normalized by the 128-problem batch size. It is not scored because no machine-independent LQR proxy is exposed in the frozen artifact."},
         "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against mpc.pytorch; retained for reference validation but not used for split scoring because the evaluator does not compute it."},
         "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against cvxpygen/OSQP; retained for reference validation but not used for split scoring because the evaluator does not compute it."}
       },
@@ -33,12 +33,12 @@
     },
     "bounded_lqr_umax_low": {
       "description": "Bounded LQR OCP with u_max=1.0: timing for solving n_batch=128 problems with adjoint sensitivities. N=20, nx=8, nu=4, n_theta=248. From Table 1 of the paper. Note: mpc.pytorch fails to converge consistently in this setting.",
-      "weight": 0.2,
+      "weight": 0.0,
       "primary_metric": "solve_and_sens_time_ms",
       "metrics": {
-        "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": -1.0, "description": "Visible total solve-plus-adjoint-sensitivity latency for the 128 tight-bound LQR problems; lower is better but runner should treat hardware variation as a residual risk."},
-        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": -0.4, "description": "Held-out normalization of solve-plus-sensitivity time by the 128-problem batch size under the tight control bound."},
-        "tight_to_loose_runtime_ratio": {"higher_is_better": false, "coefficient": -0.3, "description": "Tight-bound runtime divided by loose-bound runtime, checking that efficiency is not tuned only to the easier loose-bound case."},
+        "solve_and_sens_time_ms": {"higher_is_better": false, "coefficient": 0.0, "description": "Context-only wall-clock total solve-plus-adjoint-sensitivity latency for the 128 tight-bound LQR problems. It is not scored because hardware varies across ResearchGym runs."},
+        "per_problem_solve_and_sens_ms": {"higher_is_better": false, "coefficient": 0.0, "description": "Context-only wall-clock latency normalized by the 128-problem batch size. It is not scored because no machine-independent LQR proxy is exposed in the frozen artifact."},
+        "tight_to_loose_runtime_ratio": {"higher_is_better": false, "coefficient": 0.0, "description": "Context-only tight-bound wall-clock runtime divided by loose-bound runtime. It is retained for diagnostics but not scored."},
         "speedup_vs_mpc_pytorch": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against mpc.pytorch; retained for reference validation but not used for split scoring because the evaluator does not compute it."},
         "speedup_vs_cvxpygen": {"higher_is_better": true, "coefficient": 0.0, "description": "Paper-reported contextual speedup against cvxpygen/OSQP; retained for reference validation but not used for split scoring because the evaluator does not compute it."}
       },
@@ -65,7 +65,7 @@
     },
     "pendulum_sensitivity_accuracy": {
       "description": "Highly-parametric pendulum OCP: sensitivity accuracy vs finite differences. Cart-pole system, N=50, nx=4, nu=1, n_theta=1. Core claim: acados sensitivities match finite differences, while the Gauss-Newton Hessian approximation gives materially worse sensitivities. The paper presents this comparison graphically in Figure 2 and does not report a numeric Gauss-Newton max-error value.",
-      "weight": 0.6,
+      "weight": 1.0,
       "primary_metric": "sensitivity_max_error",
       "metrics": {
         "sensitivity_max_error": {"higher_is_better": false, "coefficient": -1.0, "description": "Visible absolute error between adjoint sensitivity and finite-difference sensitivity at the pendulum reference point."},
