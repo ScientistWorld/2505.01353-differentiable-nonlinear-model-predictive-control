@@ -217,16 +217,26 @@ class PendulumSolvers:
         )
         return float(np.asarray(raw).reshape(-1)[0])
 
-    def exact_sensitivity(self, iterate) -> float:
+    @staticmethod
+    def _forward_u0(solver) -> float:
+        # Forward solution sensitivity (paper eq. 11), as in the paper's Figure 2 code.
+        out = solver.eval_solution_sensitivity(0, "p_global", return_sens_x=False, sanity_checks=False)
+        return float(np.asarray(out["sens_u"]).reshape(-1)[0])
+
+    def exact_sensitivity(self, iterate, adjoint: bool = False) -> float:
+        """(S2)-(S5): iterate transfer, exact-Hessian factorization, sensitivity.
+
+        n_theta = 1 here, so the forward sensitivity of the paper's Figure 2
+        code is used; ``adjoint=True`` evaluates eq. (13) instead."""
         self.sens.set_iterate(iterate)
         self.sens.setup_qp_matrices_and_factorize()
-        return self._adjoint_u0(self.sens)
+        return self._adjoint_u0(self.sens) if adjoint else self._forward_u0(self.sens)
 
     def gauss_newton_sensitivity(self, iterate) -> float:
         # Same IFT step, but the KKT matrix uses the Gauss-Newton Hessian (Remark 3).
         self.sens_gn.set_iterate(iterate)
         self.sens_gn.setup_qp_matrices_and_factorize()
-        return self._adjoint_u0(self.sens_gn)
+        return self._forward_u0(self.sens_gn)
 
 
 def _pendulum_instance(inst: dict):
