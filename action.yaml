@@ -1,4 +1,4 @@
 action: submit
 gpus: 0
 test: false
-notes: "Resume gym audit after restoring the original NumPy wheel under redteam only; run all numerical controls and shortcut hidden tests."
+notes: "Check derivative accuracy with a finite-difference step sweep and score two genuine tighter-solver variants using their native error reports."
