@@ -1,0 +1,55 @@
+[hive] This stdout log is managed by Hive.
+[hive] job_id: 785f33cc
+[hive] host: node
+[hive] node_id: f498b1c1ad70c4e3dcc67e3727fb91698db5683e6900b25792f72d9f
+[hive] user: nexus/user (remote)
+[hive] resource: gpu-cpu-test
+[hive] gpus: 0
+[hive] cpus: 1
+[hive] workdir: /home/user
+[hive] timeout_sec: 21600
+[hive] started_at: 2026-11-11 12:58:42 EST
+[hive] command: apptainer exec --containall --cleanenv --env HF_HOME=/home/user/shared/hf_cache --env TRANSFORMERS_CACHE=/home/user/shared/hf_cache --env HF_DATASETS_CACHE=/home/user/shared/hf_cache/datasets --env TORCH_HOME=/home/user/shared/hf_cache/torch --bind /home/user/scratch/AgentWorkspaces/workspaces/2505.01353:/home/user --overlay /home/user/scratch/AgentWorkspaces/workspaces/2505.01353/environment/overlay.img:ro --bind /home/user/scratch/AgentWorkspaces/shared/datasets:/home/user/shared/datasets:ro --bind /home/user/scratch/AgentWorkspaces/shared/models:/home/user/shared/models:ro --bind /home/user/scratch/AgentWorkspaces/shared/hf_cache:/home/user/shared/hf_cache /home/user/scratch/AgentWorkspaces/workspaces/2505.01353/environment/container.sif bash -c 'cd /home/user && bash /home/user/scripts/run.sh'
+audit_method_numpy_wheel=numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+START reference_seed0
+DONE reference_seed0 {'exit_code': 0, 'seconds': 22.819967568997527}
+START reference_seed1
+DONE reference_seed1 {'exit_code': 0, 'seconds': 5.855188595000072}
+START reference_seed2
+DONE reference_seed2 {'exit_code': 0, 'seconds': 6.197045289998641}
+START better_clip
+DONE better_clip {'exit_code': 0, 'seconds': 6.5056343889882555}
+START better_tol10
+DONE better_tol10 {'exit_code': 0, 'seconds': 6.461590807011817}
+START better_tol12
+DONE better_tol12 {'exit_code': 0, 'seconds': 6.914867001993116}
+START weaker_gn
+DONE weaker_gn {'exit_code': 0, 'seconds': 0.2662361640104791}
+START fd_oracle_shortcut
+DONE fd_oracle_shortcut {'exit_code': 0, 'seconds': 6.800353149010334}
+START single_point_shortcut
+DONE single_point_shortcut {'exit_code': 0, 'seconds': 6.50387975499325}
+START fabricated_zero_shortcut
+DONE fabricated_zero_shortcut {'exit_code': 0, 'seconds': 0.21596435000537895}
+START boolean_zero_shortcut
+DONE boolean_zero_shortcut {'exit_code': 0, 'seconds': 0.2662603839999065}
+START baseline_inflation_shortcut
+DONE baseline_inflation_shortcut {'exit_code': 0, 'seconds': 0.36663298099301755}
+START moving_anchors_shortcut
+DONE moving_anchors_shortcut {'exit_code': 0, 'seconds': 0.36678055200900417}
+START method_omission_shortcut
+DONE method_omission_shortcut {'exit_code': 0, 'seconds': 0.2160673900070833}
+START constant_zero_shortcut
+DONE constant_zero_shortcut {'exit_code': 0, 'seconds': 0.33150190199376084}
+START negative_error_shortcut
+DONE negative_error_shortcut {'exit_code': 0, 'seconds': 0.21639523000339977}
+START null_error_shortcut
+DONE null_error_shortcut {'exit_code': 0, 'seconds': 0.2674137029971462}
+START nan_error_shortcut
+DONE nan_error_shortcut {'exit_code': 0, 'seconds': 0.21625396999297664}
+START empty_entry_shortcut
+DONE empty_entry_shortcut {'exit_code': 0, 'seconds': 0.22523205701145343}
+START missing_method_shortcut
+DONE missing_method_shortcut {'exit_code': 0, 'seconds': 0.3164168270013761}
+START success_flag_shortcut
+DONE success_flag_shortcut {'exit_code': 0, 'seconds': 0.2662608140090015}

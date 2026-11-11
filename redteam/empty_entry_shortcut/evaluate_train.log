@@ -2,6 +2,7 @@
 Traceback (most recent call last):
   File "/home/user/eval/train/evaluator.py", line 45, in _metric
     value = method_scores[metric_name]
+            ~~~~~~~~~~~~~^^^^^^^^^^^^^
 KeyError: 'sensitivity_max_error'
 
 The above exception was the direct cause of the following exception:

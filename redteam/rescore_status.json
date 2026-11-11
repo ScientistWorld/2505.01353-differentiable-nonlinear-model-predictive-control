@@ -1,0 +1,140 @@
+{
+  "baseline_inflation_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.09107848699204624
+  },
+  "better_clip": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07735903799766675
+  },
+  "better_native_tol10": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07754326000576839
+  },
+  "better_native_tol12": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07688028999837115
+  },
+  "better_tol10": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07399868800712284
+  },
+  "better_tol12": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07586098299361765
+  },
+  "boolean_zero_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07667594599479344
+  },
+  "constant_zero_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07740818700403906
+  },
+  "empty_entry_shortcut": {
+    "train_exit_code": 1,
+    "test_exit_code": 1,
+    "test_wrote_scores": false,
+    "evaluation_seconds": 0.09303103499405552
+  },
+  "fabricated_zero_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.07607767199806403
+  },
+  "fd_oracle_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.08011024100414943
+  },
+  "method_omission_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.08268755099561531
+  },
+  "missing_method_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 1,
+    "test_wrote_scores": false,
+    "evaluation_seconds": 0.08127980399876833
+  },
+  "moving_anchors_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.08066376201168168
+  },
+  "nan_error_shortcut": {
+    "train_exit_code": 1,
+    "test_exit_code": 1,
+    "test_wrote_scores": false,
+    "evaluation_seconds": 0.10545804799767211
+  },
+  "negative_error_shortcut": {
+    "train_exit_code": 1,
+    "test_exit_code": 1,
+    "test_wrote_scores": false,
+    "evaluation_seconds": 0.08789856699877419
+  },
+  "null_error_shortcut": {
+    "train_exit_code": 1,
+    "test_exit_code": 1,
+    "test_wrote_scores": false,
+    "evaluation_seconds": 0.10774762400251348
+  },
+  "reference_seed0": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.09039236900571268
+  },
+  "reference_seed1": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.10131259000627324
+  },
+  "reference_seed2": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.09030982499825768
+  },
+  "single_point_shortcut": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.11513606700464152
+  },
+  "success_flag_shortcut": {
+    "train_exit_code": 1,
+    "test_exit_code": 1,
+    "test_wrote_scores": false,
+    "evaluation_seconds": 0.0846889079984976
+  },
+  "weaker_gn": {
+    "train_exit_code": 0,
+    "test_exit_code": 0,
+    "test_wrote_scores": true,
+    "evaluation_seconds": 0.094255862000864
+  }
+}

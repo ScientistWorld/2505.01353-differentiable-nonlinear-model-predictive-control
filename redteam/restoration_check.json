@@ -1,0 +1,25 @@
+{
+  "base_commit": "c6943f92a4c5886217e28a5489a48ecf1864e7fc",
+  "protected_tracked_directories_unchanged": [
+    "briefing",
+    "eval",
+    "method",
+    "baseline",
+    "data",
+    "environment",
+    "scoring",
+    "scripts"
+  ],
+  "unexpected_tracked_paths_outside_audit": [],
+  "original_artifact_byte_checks_sha256": {
+    "checkpoints/reproduction_results.json": "cc618fef824dd145338e890745c5c7bba1dc051bbe49b4eac3433c81eac91e3a",
+    "scoring/scores_test.json": "431b673b694599ea08b49c4eb5de6bf614468cd2a29d16dd15c26ebf185db4d8"
+  },
+  "preserved_initial_harness_changes": [
+    "README.md",
+    "manifest.json",
+    "trajectory/session.json",
+    ".git-shims/"
+  ],
+  "protocol_control_exception": "action.yaml is set to done after the final audit commit"
+}

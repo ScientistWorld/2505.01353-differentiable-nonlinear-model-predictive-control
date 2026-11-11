@@ -1,0 +1,13 @@
+{
+  "run_id": "1dff3b93-a74",
+  "project_id": "swarm-2505.01353",
+  "command": "bash /home/user/scripts/run.sh",
+  "status": "completed",
+  "returncode": 0,
+  "duration": 40.48697066307068,
+  "submitted_at": 1794420354.9455771,
+  "started_at": 1794420357.731873,
+  "completed_at": 1794420398.2188437,
+  "stdout": "[hive] This stdout log is managed by Hive.\n[hive] job_id: 8ba6861d\n[hive] host: node\n[hive] node_id: f498b1c1ad70c4e3dcc67e3727fb91698db5683e6900b25792f72d9f\n[hive] user: nexus/user (remote)\n[hive] resource: gpu-cpu-test\n[hive] gpus: 0\n[hive] cpus: 1\n[hive] workdir: /home/user\n[hive] timeout_sec: 21600\n[hive] started_at: 2026-11-11 13:05:58 EST\n[hive] command: apptainer exec --containall --cleanenv --env HF_HOME=/home/user/shared/hf_cache --env TRANSFORMERS_CACHE=/home/user/shared/hf_cache --env HF_DATASETS_CACHE=/home/user/shared/hf_cache/datasets --env TORCH_HOME=/home/user/shared/hf_cache/torch --bind /home/user/scratch/AgentWorkspaces/workspaces/2505.01353:/home/user --overlay /home/user/scratch/AgentWorkspaces/workspaces/2505.01353/environment/overlay.img:ro --bind /home/user/scratch/AgentWorkspaces/shared/datasets:/home/user/shared/datasets:ro --bind /home/user/scratch/AgentWorkspaces/shared/models:/home/user/shared/models:ro --bind /home/user/scratch/AgentWorkspaces/shared/hf_cache:/home/user/shared/hf_cache /home/user/scratch/AgentWorkspaces/workspaces/2505.01353/environment/container.sif bash -c 'cd /home/user && bash /home/user/scripts/run.sh'\n",
+  "stderr": "[hive] This stderr log is managed by Hive.\n[hive] job_id: 8ba6861d\n[hive] host: node\n[hive] node_id: f498b1c1ad70c4e3dcc67e3727fb91698db5683e6900b25792f72d9f\n[hive] user: nexus/user (remote)\n[hive] resource: gpu-cpu-test\n[hive] gpus: 0\n[hive] cpus: 1\n[hive] workdir: /home/user\n[hive] timeout_sec: 21600\n[hive] started_at: 2026-11-11 13:05:58 EST\n[hive] command: apptainer exec --containall --cleanenv --env HF_HOME=/home/user/shared/hf_cache --env TRANSFORMERS_CACHE=/home/user/shared/hf_cache --env HF_DATASETS_CACHE=/home/user/shared/hf_cache/datasets --env TORCH_HOME=/home/user/shared/hf_cache/torch --bind /home/user/scratch/AgentWorkspaces/workspaces/2505.01353:/home/user --overlay /home/user/scratch/AgentWorkspaces/workspaces/2505.01353/environment/overlay.img:ro --bind /home/user/scratch/AgentWorkspaces/shared/datasets:/home/user/shared/datasets:ro --bind /home/user/scratch/AgentWorkspaces/shared/models:/home/user/shared/models:ro --bind /home/user/scratch/AgentWorkspaces/shared/hf_cache:/home/user/shared/hf_cache /home/user/scratch/AgentWorkspaces/workspaces/2505.01353/environment/container.sif bash -c 'cd /home/user && bash /home/user/scripts/run.sh'\n"
+}

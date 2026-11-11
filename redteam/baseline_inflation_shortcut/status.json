@@ -2,5 +2,5 @@
   "train_exit_code": 0,
   "test_exit_code": 0,
   "test_wrote_scores": true,
-  "evaluation_seconds": 0.22292244799609762
+  "evaluation_seconds": 0.09107848699204624
 }

@@ -1,0 +1,414 @@
+{
+  "reference_test_metrics": {
+    "log10_sensitivity_advantage_vs_gn": 6.115184760809773,
+    "log10_error_regression_vs_exact": 0.0
+  },
+  "normalization": {
+    "experiment_weight": 0.999998,
+    "absolute_coefficients": {
+      "log10_sensitivity_advantage_vs_gn": 0.45,
+      "log10_error_regression_vs_exact": 0.45
+    },
+    "higher_is_better": {
+      "log10_sensitivity_advantage_vs_gn": true,
+      "log10_error_regression_vs_exact": false
+    },
+    "direct_error_absent_from_test": true,
+    "future_cohort_standard_deviations": "unknown; no numeric aggregate rank asserted"
+  },
+  "independent_precision_check": {
+    "richardson_median": -54.975774214362616,
+    "last_three_spread": 1.0764722446765518e-09,
+    "candidate_absolute_errors": {
+      "reference_seed0": 1.4270233847923919e-06,
+      "better_clip": 1.820344408542951e-08,
+      "better_tol10": 5.928200152993668e-10,
+      "better_tol12": 8.64176286086149e-10
+    }
+  },
+  "attempts": {
+    "baseline_inflation_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.09107848699204624
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.5699324840265945e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 12.115184760809763,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 5.99999999999999,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "better_clip": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07735903799766675
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.7144551669143766e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.097949643096814,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": -0.017235117712958825,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "better_native_tol10": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07754326000576839
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 1.4307182283346265e-07,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 8.512287629727739,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 2.3971028689179663,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "better_native_tol12": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07688028999837115
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 8.799629114264462e-08,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 8.723375472328602,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 2.608190711518829,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "better_tol10": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07399868800712284
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.712575540504304e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.098169464827876,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": -0.01701529598189655,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "better_tol12": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07586098299361765
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.712721240134442e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.098152421322261,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": -0.017032339487511372,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "boolean_zero_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07667594599479344
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": false,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 12.000000000000435,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 5.8848152391906625,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "constant_zero_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07740818700403906
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 54.97573708801439,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": -0.07232628526544067,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": -6.187511046075214,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "empty_entry_shortcut": {
+      "status": {
+        "train_exit_code": 1,
+        "test_exit_code": 1,
+        "test_wrote_scores": false,
+        "evaluation_seconds": 0.09303103499405552
+      }
+    },
+    "fabricated_zero_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.07607767199806403
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 0.0,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 12.000000000000435,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 5.8848152391906625,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "fd_oracle_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.08011024100414943
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 0.0,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 13.66784477561617,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 7.5526600148063965,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "method_omission_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.08268755099561531
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.5699324840265945e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.115184760809773,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 0.0,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "missing_method_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 1,
+        "test_wrote_scores": false,
+        "evaluation_seconds": 0.08127980399876833
+      }
+    },
+    "moving_anchors_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.08066376201168168
+      },
+      "selected_method": "shortcut_bad_gn",
+      "reported_error": 46.54197147092533,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 13.33215522438383,
+        "log10_error_regression_vs_exact": -13.33215522438383
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 7.216970463574058,
+        "log10_error_regression_vs_exact": 13.33215522438383
+      }
+    },
+    "nan_error_shortcut": {
+      "status": {
+        "train_exit_code": 1,
+        "test_exit_code": 1,
+        "test_wrote_scores": false,
+        "evaluation_seconds": 0.10545804799767211
+      }
+    },
+    "negative_error_shortcut": {
+      "status": {
+        "train_exit_code": 1,
+        "test_exit_code": 1,
+        "test_wrote_scores": false,
+        "evaluation_seconds": 0.08789856699877419
+      }
+    },
+    "null_error_shortcut": {
+      "status": {
+        "train_exit_code": 1,
+        "test_exit_code": 1,
+        "test_wrote_scores": false,
+        "evaluation_seconds": 0.10774762400251348
+      }
+    },
+    "reference_seed0": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.09039236900571268
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.5699324840265945e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.115184760809773,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 0.0,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "reference_seed1": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.10131259000627324
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.5699324840265945e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.115184760809773,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 0.0,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "reference_seed2": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.09030982499825768
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.5699324840265945e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.115184760809773,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 0.0,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "single_point_shortcut": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.11513606700464152
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 3.5699324840265945e-05,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 6.115184760809773,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": 0.0,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    },
+    "success_flag_shortcut": {
+      "status": {
+        "train_exit_code": 1,
+        "test_exit_code": 1,
+        "test_wrote_scores": false,
+        "evaluation_seconds": 0.0846889079984976
+      }
+    },
+    "weaker_gn": {
+      "status": {
+        "train_exit_code": 0,
+        "test_exit_code": 0,
+        "test_wrote_scores": true,
+        "evaluation_seconds": 0.094255862000864
+      },
+      "selected_method": "acados_exact_hessian",
+      "reported_error": 46.54197147092533,
+      "test_metrics": {
+        "log10_sensitivity_advantage_vs_gn": 0.0,
+        "log10_error_regression_vs_exact": 0.0
+      },
+      "directed_improvement_over_reference": {
+        "log10_sensitivity_advantage_vs_gn": -6.115184760809773,
+        "log10_error_regression_vs_exact": 0.0
+      }
+    }
+  },
+  "reference_seed_spread": {
+    "log10_sensitivity_advantage_vs_gn": {
+      "values": [
+        6.115184760809773,
+        6.115184760809773,
+        6.115184760809773
+      ],
+      "range": 0.0,
+      "sample_standard_deviation": 0.0
+    },
+    "log10_error_regression_vs_exact": {
+      "values": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "range": 0.0,
+      "sample_standard_deviation": 0.0
+    },
+    "sensitivity_max_error": {
+      "values": [
+        3.5699324840265945e-05,
+        3.5699324840265945e-05,
+        3.5699324840265945e-05
+      ],
+      "range": 0.0,
+      "sample_standard_deviation": 0.0
+    }
+  }
+}

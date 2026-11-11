@@ -1,0 +1,25 @@
+baseline_inflation_shortcut    e=3.56993248403e-05 A=12.115184760810 R=0.000000000000
+better_clip                    e=3.71445516691e-05 A=6.097949643097 R=0.000000000000
+better_native_tol10            e=1.43071822833e-07 A=8.512287629728 R=0.000000000000
+better_native_tol12            e=8.79962911426e-08 A=8.723375472329 R=0.000000000000
+better_tol10                   e=3.7125755405e-05 A=6.098169464828 R=0.000000000000
+better_tol12                   e=3.71272124013e-05 A=6.098152421322 R=0.000000000000
+boolean_zero_shortcut          e=0 A=12.000000000000 R=0.000000000000
+constant_zero_shortcut         e=54.975737088 A=-0.072326285265 R=0.000000000000
+empty_entry_shortcut           FAIL {'train_exit_code': 1, 'test_exit_code': 1, 'test_wrote_scores': False, 'evaluation_seconds': 0.09303103499405552}
+fabricated_zero_shortcut       e=0 A=12.000000000000 R=0.000000000000
+fd_oracle_shortcut             e=0 A=13.667844775616 R=0.000000000000
+method_omission_shortcut       e=3.56993248403e-05 A=6.115184760810 R=0.000000000000
+missing_method_shortcut        FAIL {'train_exit_code': 0, 'test_exit_code': 1, 'test_wrote_scores': False, 'evaluation_seconds': 0.08127980399876833}
+moving_anchors_shortcut        e=46.5419714709 A=13.332155224384 R=-13.332155224384
+nan_error_shortcut             FAIL {'train_exit_code': 1, 'test_exit_code': 1, 'test_wrote_scores': False, 'evaluation_seconds': 0.10545804799767211}
+negative_error_shortcut        FAIL {'train_exit_code': 1, 'test_exit_code': 1, 'test_wrote_scores': False, 'evaluation_seconds': 0.08789856699877419}
+null_error_shortcut            FAIL {'train_exit_code': 1, 'test_exit_code': 1, 'test_wrote_scores': False, 'evaluation_seconds': 0.10774762400251348}
+reference_seed0                e=3.56993248403e-05 A=6.115184760810 R=0.000000000000
+reference_seed1                e=3.56993248403e-05 A=6.115184760810 R=0.000000000000
+reference_seed2                e=3.56993248403e-05 A=6.115184760810 R=0.000000000000
+single_point_shortcut          e=3.56993248403e-05 A=6.115184760810 R=0.000000000000
+success_flag_shortcut          FAIL {'train_exit_code': 1, 'test_exit_code': 1, 'test_wrote_scores': False, 'evaluation_seconds': 0.0846889079984976}
+weaker_gn                      e=46.5419714709 A=0.000000000000 R=0.000000000000
+precision {'richardson_median': -54.975774214362616, 'last_three_spread': 1.0764722446765518e-09, 'candidate_absolute_errors': {'reference_seed0': 1.4270233847923919e-06, 'better_clip': 1.820344408542951e-08, 'better_tol10': 5.928200152993668e-10, 'better_tol12': 8.64176286086149e-10}}
+seed spreads {'log10_sensitivity_advantage_vs_gn': {'values': [6.115184760809773, 6.115184760809773, 6.115184760809773], 'range': 0.0, 'sample_standard_deviation': 0.0}, 'log10_error_regression_vs_exact': {'values': [0.0, 0.0, 0.0], 'range': 0.0, 'sample_standard_deviation': 0.0}, 'sensitivity_max_error': {'values': [3.5699324840265945e-05, 3.5699324840265945e-05, 3.5699324840265945e-05], 'range': 0.0, 'sample_standard_deviation': 0.0}}

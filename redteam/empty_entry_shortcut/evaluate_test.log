@@ -2,6 +2,7 @@
 Traceback (most recent call last):
   File "/home/user/eval/test/evaluator.py", line 49, in _metric
     value = results[method_name][metric_name]
+            ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
 KeyError: 'sensitivity_max_error'
 
 The above exception was the direct cause of the following exception:
@@ -14,6 +15,7 @@ Traceback (most recent call last):
     _nonnegative_metric(scores, experiment_name, method_name, metric_name)
   File "/home/user/eval/test/evaluator.py", line 60, in _nonnegative_metric
     value = _metric(scores, experiment_name, method_name, metric_name)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/user/eval/test/evaluator.py", line 51, in _metric
     raise ValueError(
 ValueError: Missing metric pendulum_sensitivity_accuracy/acados_exact_hessian/sensitivity_max_error

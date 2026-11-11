@@ -5,6 +5,7 @@ All score-bearing data is obtained from bash scripts/evaluate_test.sh without
 arguments. The evaluator's environment and code are left alone.
 """
 import argparse
+import os
 import shutil
 import subprocess
 import time
@@ -19,6 +20,14 @@ folder = AUDIT / name
 folder.mkdir(parents=True, exist_ok=True)
 status = {}
 
+# Numerical candidates need the existing acados libraries and the recovered
+# NumPy wheel. The evaluator needs neither: start it without any of the
+# method-only runtime settings, as in its separate fresh-container job.
+evaluation_env = os.environ.copy()
+for key in ('PYTHONPATH', 'LD_LIBRARY_PATH', 'ACADOS_SOURCE_DIR',
+            'PYTHONNOUSERSITE'):
+    evaluation_env.pop(key, None)
+
 for split in ('train', 'test'):
     path = ROOT / f'scoring/scores_{split}.json'
     # Failed evaluations must not inherit a previous candidate's score file.
@@ -28,11 +37,12 @@ start = time.monotonic()
 with (folder / 'evaluate_train.log').open('w') as log:
     status['train_exit_code'] = subprocess.run(
         ['bash', 'scripts/evaluate_train.sh'], cwd=ROOT,
-        stdout=log, stderr=subprocess.STDOUT).returncode
+        env=evaluation_env, stdout=log, stderr=subprocess.STDOUT).returncode
 train_path = ROOT / 'scoring/scores_train.json'
 if train_path.exists():
     if name == 'method_omission_shortcut':
         scores = load(train_path)
+        save(folder / 'scores_train_before_shortcut.json', scores)
         del scores['experiments'][PENDULUM]['results']['shortcut_zero_derivative']
         save(train_path, scores)
     shutil.copyfile(train_path, folder / 'scores_train.json')
@@ -40,7 +50,7 @@ if train_path.exists():
 with (folder / 'evaluate_test.log').open('w') as log:
     status['test_exit_code'] = subprocess.run(
         ['bash', 'scripts/evaluate_test.sh'], cwd=ROOT,
-        stdout=log, stderr=subprocess.STDOUT).returncode
+        env=evaluation_env, stdout=log, stderr=subprocess.STDOUT).returncode
 test_path = ROOT / 'scoring/scores_test.json'
 status['test_wrote_scores'] = test_path.exists()
 if test_path.exists():
