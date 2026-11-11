@@ -1,0 +1,10 @@
+=== Evaluating train slice ===
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+  File "/home/user/eval/train/evaluator.py", line 99, in evaluate_all
+    _validate_results(raw_scores)
+  File "/home/user/eval/train/evaluator.py", line 69, in _validate_results
+    _metric(method_scores, experiment_name, method_name, metric_name)
+  File "/home/user/eval/train/evaluator.py", line 54, in _metric
+    raise ValueError(
+ValueError: pendulum_sensitivity_accuracy/acados_exact_hessian/sensitivity_max_error must be finite and nonnegative

@@ -1,0 +1,5 @@
+=== Evaluating train slice ===
+Train scores written to /home/user/scoring/scores_train.json
+
+=== Train evaluation complete ===
+Results written to scoring/scores_train.json

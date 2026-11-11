@@ -1,0 +1,5 @@
+=== Evaluating held-out test slice ===
+Test scores written to /home/user/scoring/scores_test.json
+
+=== Test evaluation complete ===
+Results written to scoring/scores_test.json

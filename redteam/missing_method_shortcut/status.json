@@ -1,0 +1,6 @@
+{
+  "train_exit_code": 0,
+  "test_exit_code": 1,
+  "test_wrote_scores": false,
+  "evaluation_seconds": 0.16565437598910648
+}

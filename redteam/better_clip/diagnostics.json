@@ -1,0 +1,52 @@
+{
+  "fd_sensitivity": -54.97573708801439,
+  "exact_sensitivity": -54.97577423256606,
+  "gn_sensitivity": -8.433766006219969,
+  "ref_theta": 0.7999999999999999,
+  "nominal_statuses": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    4,
+    0,
+    0,
+    0
+  ],
+  "fd_statuses": [
+    0,
+    0,
+    0
+  ],
+  "nominal_residuals": [
+    9.33320620788436e-09,
+    1.1102230246251565e-15,
+    0.0,
+    6.846292786535186e-10
+  ],
+  "sweep_points": 21,
+  "fd_step": 1e-05,
+  "seed": 0,
+  "native_errors": {
+    "acados_exact_hessian": {
+      "sensitivity_max_error": 3.7144551669143766e-05
+    },
+    "gauss_newton_approx": {
+      "sensitivity_max_error": 46.54197108179442
+    }
+  },
+  "fixed_evaluation_fd": -54.97573708801439
+}

@@ -1,4 +1,4 @@
 action: submit
 gpus: 0
 test: false
-notes: "Audit: three reference seeds, tighter numerical methods, Gauss-Newton ablation, finite-difference brute force, and artifact shortcuts; preserve each hidden-test result under redteam."
+notes: "Resume gym audit after restoring the original NumPy wheel under redteam only; run all numerical controls and shortcut hidden tests."

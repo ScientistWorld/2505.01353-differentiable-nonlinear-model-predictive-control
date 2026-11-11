@@ -1,0 +1,12 @@
+=== Evaluating held-out test slice ===
+Traceback (most recent call last):
+  File "<string>", line 5, in <module>
+  File "/home/user/eval/test/evaluator.py", line 184, in evaluate_all
+    _validate_results(raw_scores)
+  File "/home/user/eval/test/evaluator.py", line 77, in _validate_results
+    _nonnegative_metric(scores, experiment_name, method_name, metric_name)
+  File "/home/user/eval/test/evaluator.py", line 60, in _nonnegative_metric
+    value = _metric(scores, experiment_name, method_name, metric_name)
+  File "/home/user/eval/test/evaluator.py", line 55, in _metric
+    raise ValueError(f"{experiment_name}/{method_name}/{metric_name} must be numeric")
+ValueError: pendulum_sensitivity_accuracy/acados_exact_hessian/sensitivity_max_error must be numeric

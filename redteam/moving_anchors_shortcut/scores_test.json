@@ -1,0 +1,35 @@
+{
+  "experiments": {
+    "pendulum_sensitivity_accuracy": {
+      "results": {
+        "acados_exact_hessian": {
+          "log10_sensitivity_advantage_vs_gn": 0.0,
+          "log10_error_regression_vs_exact": 0.0
+        },
+        "gauss_newton_approx": {
+          "log10_sensitivity_advantage_vs_gn": 0.0,
+          "log10_error_regression_vs_exact": 0.0
+        },
+        "shortcut_bad_gn": {
+          "log10_sensitivity_advantage_vs_gn": 13.33215522438383,
+          "log10_error_regression_vs_exact": -13.33215522438383
+        }
+      }
+    },
+    "bounded_lqr_umax_high": {
+      "results": {
+        "acados": {
+          "per_problem_solve_and_sens_ms": 0.2548958281067826
+        }
+      }
+    },
+    "bounded_lqr_umax_low": {
+      "results": {
+        "acados": {
+          "per_problem_solve_and_sens_ms": 0.6386374609519407,
+          "tight_to_loose_runtime_ratio": 2.505484164630575
+        }
+      }
+    }
+  }
+}

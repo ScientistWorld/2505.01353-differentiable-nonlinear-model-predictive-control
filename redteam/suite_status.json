@@ -1,6 +1,86 @@
 {
   "reference_seed0": {
-    "exit_code": 1,
-    "seconds": 3.5420064510108205
+    "exit_code": 0,
+    "seconds": 22.819967568997527
+  },
+  "reference_seed1": {
+    "exit_code": 0,
+    "seconds": 5.855188595000072
+  },
+  "reference_seed2": {
+    "exit_code": 0,
+    "seconds": 6.197045289998641
+  },
+  "better_clip": {
+    "exit_code": 0,
+    "seconds": 6.5056343889882555
+  },
+  "better_tol10": {
+    "exit_code": 0,
+    "seconds": 6.461590807011817
+  },
+  "better_tol12": {
+    "exit_code": 0,
+    "seconds": 6.914867001993116
+  },
+  "weaker_gn": {
+    "exit_code": 0,
+    "seconds": 0.2662361640104791
+  },
+  "fd_oracle_shortcut": {
+    "exit_code": 0,
+    "seconds": 6.800353149010334
+  },
+  "single_point_shortcut": {
+    "exit_code": 0,
+    "seconds": 6.50387975499325
+  },
+  "fabricated_zero_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.21596435000537895
+  },
+  "boolean_zero_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.2662603839999065
+  },
+  "baseline_inflation_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.36663298099301755
+  },
+  "moving_anchors_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.36678055200900417
+  },
+  "method_omission_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.2160673900070833
+  },
+  "constant_zero_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.33150190199376084
+  },
+  "negative_error_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.21639523000339977
+  },
+  "null_error_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.2674137029971462
+  },
+  "nan_error_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.21625396999297664
+  },
+  "empty_entry_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.22523205701145343
+  },
+  "missing_method_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.3164168270013761
+  },
+  "success_flag_shortcut": {
+    "exit_code": 0,
+    "seconds": 0.2662608140090015
   }
 }
