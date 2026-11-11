@@ -68,6 +68,7 @@ def load_hidden_set() -> dict:
             hidden = json.load(handle)
     else:
         _log("train-set cache missing: regenerating ground truth (needs numpy/scipy/casadi)")
+        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
         sys.path.insert(0, HERE)
         import groundtruth  # noqa: E402  (eval/train only)
 

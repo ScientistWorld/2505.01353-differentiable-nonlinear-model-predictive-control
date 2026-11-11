@@ -661,6 +661,7 @@ def build_split(seed: int, n_pend: int, n_smooth: int, n_lqr: int, prefixes=("ps
 
     def save():
         if checkpoint_path:
+            os.makedirs(os.path.dirname(os.path.abspath(checkpoint_path)), exist_ok=True)
             tmp = checkpoint_path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as handle:
                 json.dump({"key": key, "out": out, "rng_state": rng.bit_generator.state}, handle)

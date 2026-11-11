@@ -16,20 +16,22 @@ bash /home/user/scripts/repair_vendor_runtime.sh
 source /home/user/scripts/_runtime_env.sh
 mkdir -p /home/user/hardening/results
 
-if [ "${RUN_HARDENING_CHECKS}" = "1" ]; then
+if [ "${RUN_HARDENING_CHECKS}" = "1" ] && [ ! -f /home/user/hardening/results/smoke_predictions.json ]; then
     echo ">>> Predictor smoke test (tiny instance file, no answers needed)"
     python3 /home/user/hardening/smoke_instances.py /home/user/hardening/results/smoke_instances.json
     bash /home/user/scripts/predict.sh /home/user/hardening/results/smoke_instances.json \
         /home/user/hardening/results/smoke_predictions.json 2>&1 | tee /home/user/hardening/results/smoke_predict.log || true
 fi
 
-echo ">>> Ground truth (independent IPOPT + Newton + IFT; cached after first build)"
-python3 /home/user/eval/train/evaluator.py --build-cache-only 2>&1 | tee /home/user/hardening/results/groundtruth_train.log
-python3 /home/user/eval/test/evaluator.py --build-cache-only 2>&1 | tee /home/user/hardening/results/groundtruth_test.log
+echo ">>> Train ground truth (independent IPOPT + Newton + IFT; cached after first build)"
+python3 /home/user/eval/train/evaluator.py --build-cache-only 2>&1 | tee -a /home/user/hardening/results/groundtruth_train.log
 
 echo ">>> Reference method on the visible train slice"
 bash /home/user/scripts/evaluate_train.sh
 cp /home/user/scoring/scores_train.json /home/user/scoring/scores.json
+
+echo ">>> Hidden-test ground truth (eval/test only; cached after first build)"
+python3 /home/user/eval/test/evaluator.py --build-cache-only 2>&1 | tee -a /home/user/hardening/results/groundtruth_test.log
 
 echo ">>> Reference method on the hidden test slice"
 bash /home/user/scripts/evaluate_test.sh
