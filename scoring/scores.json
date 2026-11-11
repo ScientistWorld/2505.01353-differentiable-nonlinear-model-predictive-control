@@ -4,12 +4,12 @@
       "results": {
         "acados_exact_hessian": {
           "frac_sens_accurate": 1.0,
-          "mean_log10_sens_rel_err": -7.954482056453716,
+          "mean_log10_sens_rel_err": -7.902312691339006,
           "frac_u0_accurate": 1.0
         },
         "gauss_newton_approx": {
-          "frac_sens_accurate": 0.14166666666666666,
-          "mean_log10_sens_rel_err": -1.2271152898127156,
+          "frac_sens_accurate": 0.0,
+          "mean_log10_sens_rel_err": -0.17189451595117963,
           "frac_u0_accurate": 1.0
         },
         "unconstrained_ift": {
@@ -22,14 +22,14 @@
     "pendulum_smoothed_sensitivity": {
       "results": {
         "acados_exact_hessian": {
-          "frac_sens_accurate": 0.5777777777777777,
-          "mean_log10_sens_rel_err": -3.457886802727095,
-          "frac_u0_accurate": 0.6444444444444445
+          "frac_sens_accurate": 0.7777777777777778,
+          "mean_log10_sens_rel_err": -5.102338959262914,
+          "frac_u0_accurate": 1.0
         },
         "gauss_newton_approx": {
           "frac_sens_accurate": 0.011111111111111112,
-          "mean_log10_sens_rel_err": -0.27125486087258116,
-          "frac_u0_accurate": 0.6444444444444445
+          "mean_log10_sens_rel_err": -0.35608518644717785,
+          "frac_u0_accurate": 1.0
         },
         "unconstrained_ift": {
           "frac_sens_accurate": 0.0,
@@ -41,19 +41,19 @@
     "bounded_lqr_adjoint_accuracy": {
       "results": {
         "acados_exact_hessian": {
-          "frac_sens_accurate": 0.975,
-          "mean_log10_sens_rel_err": -8.603574124110853,
-          "frac_u0_accurate": 0.9875
+          "frac_sens_accurate": 0.9710144927536232,
+          "mean_log10_sens_rel_err": -8.875047567757964,
+          "frac_u0_accurate": 0.9855072463768116
         },
         "gauss_newton_approx": {
-          "frac_sens_accurate": 0.975,
-          "mean_log10_sens_rel_err": -8.603574124110853,
-          "frac_u0_accurate": 0.9875
+          "frac_sens_accurate": 0.9710144927536232,
+          "mean_log10_sens_rel_err": -8.875047567757964,
+          "frac_u0_accurate": 0.9855072463768116
         },
         "unconstrained_ift": {
-          "frac_sens_accurate": 0.525,
-          "mean_log10_sens_rel_err": -5.25,
-          "frac_u0_accurate": 0.525
+          "frac_sens_accurate": 0.6086956521739131,
+          "mean_log10_sens_rel_err": -6.086956521739131,
+          "frac_u0_accurate": 0.6086956521739131
         }
       }
     }
@@ -61,9 +61,9 @@
   "_evaluation": {
     "status": "ok",
     "n_instances": {
-      "pendulum_sensitivity_accuracy": 120,
+      "pendulum_sensitivity_accuracy": 103,
       "pendulum_smoothed_sensitivity": 90,
-      "bounded_lqr_adjoint_accuracy": 80
+      "bounded_lqr_adjoint_accuracy": 69
     }
   }
 }

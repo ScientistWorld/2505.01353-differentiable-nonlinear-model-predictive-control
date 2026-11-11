@@ -4,12 +4,12 @@
       "results": {
         "acados_exact_hessian": {
           "frac_sens_accurate": 1.0,
-          "mean_log10_sens_rel_err": -7.879254031664703,
+          "mean_log10_sens_rel_err": -7.776048892566663,
           "frac_u0_accurate": 1.0
         },
         "gauss_newton_approx": {
-          "frac_sens_accurate": 0.2,
-          "mean_log10_sens_rel_err": -1.625729514933059,
+          "frac_sens_accurate": 0.0051813471502590676,
+          "mean_log10_sens_rel_err": -0.15712182501064306,
           "frac_u0_accurate": 1.0
         },
         "unconstrained_ift": {
@@ -22,14 +22,14 @@
     "pendulum_smoothed_sensitivity": {
       "results": {
         "acados_exact_hessian": {
-          "frac_sens_accurate": 0.5388888888888889,
-          "mean_log10_sens_rel_err": -3.504390248130908,
-          "frac_u0_accurate": 0.6444444444444445
+          "frac_sens_accurate": 0.8111111111111111,
+          "mean_log10_sens_rel_err": -5.413218766246501,
+          "frac_u0_accurate": 0.9888888888888889
         },
         "gauss_newton_approx": {
           "frac_sens_accurate": 0.0,
-          "mean_log10_sens_rel_err": -0.3464509053005703,
-          "frac_u0_accurate": 0.6444444444444445
+          "mean_log10_sens_rel_err": -0.5433710590802079,
+          "frac_u0_accurate": 0.9888888888888889
         },
         "unconstrained_ift": {
           "frac_sens_accurate": 0.0,
@@ -41,19 +41,19 @@
     "bounded_lqr_adjoint_accuracy": {
       "results": {
         "acados_exact_hessian": {
-          "frac_sens_accurate": 0.975,
-          "mean_log10_sens_rel_err": -8.557746936844419,
+          "frac_sens_accurate": 0.9714285714285714,
+          "mean_log10_sens_rel_err": -8.792865882181047,
           "frac_u0_accurate": 1.0
         },
         "gauss_newton_approx": {
-          "frac_sens_accurate": 0.975,
-          "mean_log10_sens_rel_err": -8.557746936844419,
+          "frac_sens_accurate": 0.9714285714285714,
+          "mean_log10_sens_rel_err": -8.792865882181047,
           "frac_u0_accurate": 1.0
         },
         "unconstrained_ift": {
-          "frac_sens_accurate": 0.5125,
-          "mean_log10_sens_rel_err": -5.125,
-          "frac_u0_accurate": 0.5125
+          "frac_sens_accurate": 0.5857142857142857,
+          "mean_log10_sens_rel_err": -5.857142857142857,
+          "frac_u0_accurate": 0.5857142857142857
         }
       }
     }
@@ -61,9 +61,9 @@
   "_evaluation": {
     "status": "ok",
     "n_instances": {
-      "pendulum_sensitivity_accuracy": 240,
+      "pendulum_sensitivity_accuracy": 193,
       "pendulum_smoothed_sensitivity": 180,
-      "bounded_lqr_adjoint_accuracy": 160
+      "bounded_lqr_adjoint_accuracy": 140
     }
   }
 }
