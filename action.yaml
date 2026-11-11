@@ -1,8 +1,8 @@
 # Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends.
-action: pending
+action: submit
 gpus: 0
 test: false
 milestone: core_claim
-notes: ""
+notes: "Hardening job (resubmit after preemptions): build train/test ground truth with branch warm starts (resumable), score reference on train/hidden test, run variants (better clip/tight, weaker, FD brute force) and shortcuts through the hidden-test evaluator."
