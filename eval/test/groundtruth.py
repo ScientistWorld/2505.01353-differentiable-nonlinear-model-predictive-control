@@ -691,4 +691,31 @@ def build_split(seed: int, n_pend: int, n_smooth: int, n_lqr: int, prefixes=("ps
         }
     if checkpoint_path and os.path.exists(checkpoint_path):
         os.remove(checkpoint_path)
+    return drop_trivial_instances(out)
+
+
+def drop_trivial_instances(out: dict) -> dict:
+    """Remove instances whose answer is a trivially zero sensitivity.
+
+    Pendulum (tau_min = 0): u0 strictly at its force bound, so du0/dtheta = 0
+    exactly and no differentiation is needed.  LQR: every component of u0 at
+    its bound, so the adjoint is exactly zero.  Deterministic post-filter: it
+    consumes no random draws, so rebuilding reproduces the same instance set.
+    """
+    exps = out["experiments"]
+    rules = {
+        "pendulum_sensitivity_accuracy": lambda inst, ans: abs(abs(ans["u0"]) - PEND["f_max"]) < 1e-6,
+        "bounded_lqr_adjoint_accuracy": lambda inst, ans: all(
+            abs(abs(u) - inst["u_max"]) < 1e-9 * max(1.0, inst["u_max"]) for u in ans["u0"]
+        ),
+    }
+    for name, trivial in rules.items():
+        if name not in exps:
+            continue
+        exp = exps[name]
+        keep = [inst for inst in exp["instances"] if not trivial(inst, exp["answers"][inst["id"]])]
+        ids = {inst["id"] for inst in keep}
+        exp["instances"] = keep
+        exp["answers"] = {k: v for k, v in exp["answers"].items() if k in ids}
+        exp["diagnostics"] = {k: v for k, v in exp["diagnostics"].items() if k in ids}
     return out

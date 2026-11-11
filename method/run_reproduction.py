@@ -118,6 +118,7 @@ def _build_pendulum_ocp(
     name: str,
     qp_cond_n: int | None = None,
     sens_t_lam_min: float | None = None,
+    max_iter: int = 400,
 ):
     """Create the pendulum OCP used in Section 5.1 / Appendix A.10.
 
@@ -157,7 +158,7 @@ def _build_pendulum_ocp(
     ocp.solver_options.qp_solver_iter_max = 500
     ocp.solver_options.globalization = "FIXED_STEP"
     ocp.solver_options.hessian_approx = hessian_approx
-    ocp.solver_options.nlp_solver_max_iter = 400
+    ocp.solver_options.nlp_solver_max_iter = int(max_iter)
     ocp.solver_options.tol = 1e-8
     ocp.solver_options.regularize_method = "NO_REGULARIZE"
     ocp.solver_options.levenberg_marquardt = 0.0

@@ -87,7 +87,13 @@ def _check_spec(problem: dict, expected: dict, label: str) -> None:
 class PendulumSolvers:
     """Two-solver approach of Section 4 for the parametric pendulum OCP."""
 
-    def __init__(self, tag: str = "", sens_t_lam_min: float | None = None):
+    # HPIPM initial barrier: the paper's 1e3 whenever a smoothed (tau_min > 0)
+    # problem is solved (mu0 below tau_min stalls HPIPM with MINSTEP), the
+    # gym's 1e-3 for tau_min = 0; the other value is a single fallback.
+    MU0_EXACT = 1e-3
+    MU0_SMOOTHED = 1e3
+
+    def __init__(self, tag: str = "", sens_t_lam_min: float | None = None, nominal_max_iter: int = 400):
         self.c = rr._build_parametric_pendulum_components()
         self.N = int(self.c["n_horizon"])
         solver_cls = self.c["AcadosOcpSolver"]
@@ -95,7 +101,7 @@ class PendulumSolvers:
         ex_name = f"pend_sens_exact{tag}"
         gs_name = f"pend_sens_gn{tag}"
         self.nominal = solver_cls(
-            rr._build_pendulum_ocp(self.c, hessian_approx="GAUSS_NEWTON", name=gn_name),
+            rr._build_pendulum_ocp(self.c, hessian_approx="GAUSS_NEWTON", name=gn_name, max_iter=nominal_max_iter),
             json_file=rr._generated_path(f"{gn_name}.json"),
         )
         # Paper's sensitivity solver: exact Hessian, classic Riccati, no condensing.
@@ -150,12 +156,11 @@ class PendulumSolvers:
             solver.options_set("tau_min", float(tau))
             self._set_bounds(solver, x0, unconstrained)
 
-    def set_nominal_tolerance(self, tol: float, max_iter: int) -> None:
+    def set_nominal_tolerance(self, tol: float) -> None:
         for field in ("tol_stat", "tol_eq", "tol_ineq", "tol_comp"):
             self.nominal.options_set(field, float(tol))
         for field in ("qp_tol_stat", "qp_tol_eq", "qp_tol_ineq", "qp_tol_comp"):
             self.nominal.options_set(field, float(tol) * 0.1)
-        self.nominal.options_set("nlp_solver_max_iter", int(max_iter))
 
     def _guess_init(self, solver, guess: dict) -> None:
         for stage in range(self.N):
@@ -168,18 +173,31 @@ class PendulumSolvers:
         """Warm-started from the instance's initial guess (the solution at a
         neighbouring parameter, as in the paper's sweep); RK4 rollout otherwise."""
         self.configure(theta, x0, tau, unconstrained)
-        self.nominal.reset()
-        if guess is not None:
-            self._guess_init(self.nominal, guess)
-        else:
-            self._rollout_init(self.nominal, x0, theta)
-        status = int(self.nominal.solve())
-        u0 = float(self.nominal.get(0, "u")[0])
-        return u0, status, self.nominal.get_iterate()
+        primary = self.MU0_SMOOTHED if tau > 0.0 else self.MU0_EXACT
+        fallback = self.MU0_EXACT if tau > 0.0 else self.MU0_SMOOTHED
+        result = None
+        for mu0 in (primary, fallback):
+            self.nominal.options_set("qp_mu0", float(mu0))
+            self.nominal.reset()
+            if guess is not None:
+                self._guess_init(self.nominal, guess)
+            else:
+                self._rollout_init(self.nominal, x0, theta)
+            status = int(self.nominal.solve())
+            u0 = float(self.nominal.get(0, "u")[0])
+            attempt = (u0, status, self.nominal.get_iterate())
+            if result is None:
+                result = attempt
+            if status == 0 and np.isfinite(u0):
+                result = attempt
+                break
+        self.nominal.options_set("qp_mu0", float(primary))
+        return result
 
     def resolve_from(self, iterate, theta: float, x0: np.ndarray, tau: float):
         """Warm-started nominal solve at a nearby parameter (used by FD variants)."""
         self.configure(theta, x0, tau)
+        self.nominal.options_set("qp_mu0", float(self.MU0_SMOOTHED if tau > 0.0 else self.MU0_EXACT))
         self.nominal.set_iterate(iterate)
         status = int(self.nominal.solve())
         if status not in (0, 2):
@@ -266,7 +284,8 @@ def predict_pendulum(solvers: PendulumSolvers, experiment: dict, out: dict, exp_
 class LqrSolver:
     """Bounded-LQR OCP with all of (A, B, b, H) as global parameters."""
 
-    def __init__(self, tag: str = "", hessian_approx: str = "EXACT", sens_t_lam_min: float | None = None):
+    def __init__(self, tag: str = "", hessian_approx: str = "EXACT", sens_t_lam_min: float | None = None,
+                 max_iter: int = 50):
         ca, AcadosModel, AcadosOcp, AcadosOcpSolver = rr._import_acados()
         nx, nu, n_horizon = LQR_SPEC["nx"], LQR_SPEC["nu"], LQR_SPEC["N"]
         self.nx, self.nu, self.N = nx, nu, n_horizon
@@ -309,18 +328,17 @@ class LqrSolver:
         opts.hessian_approx = hessian_approx
         opts.qp_solver_cond_N = n_horizon
         opts.with_solution_sens_wrt_params = True
-        opts.nlp_solver_max_iter = 50
+        opts.nlp_solver_max_iter = int(max_iter)
         opts.tol = 1e-6  # Appendix A.11: problems solved to a tolerance of 1e-6
         if sens_t_lam_min is not None:
             opts.solution_sens_qp_t_lam_min = float(sens_t_lam_min)
         self.solver = AcadosOcpSolver(ocp, json_file=rr._generated_path(f"{name}.json"))
 
-    def set_tolerance(self, tol: float, max_iter: int) -> None:
+    def set_tolerance(self, tol: float) -> None:
         for field in ("tol_stat", "tol_eq", "tol_ineq", "tol_comp"):
             self.solver.options_set(field, float(tol))
         for field in ("qp_tol_stat", "qp_tol_eq", "qp_tol_ineq", "qp_tol_comp"):
             self.solver.options_set(field, float(tol) * 0.1)
-        self.solver.options_set("nlp_solver_max_iter", int(max_iter))
 
     def configure(self, theta: np.ndarray, x0: np.ndarray, u_max: float) -> None:
         s = self.solver
