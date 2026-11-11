@@ -1,0 +1,38 @@
+Traceback (most recent call last):
+  File "/home/user/redteam/reference_seed0/method.py", line 7, in <module>
+    runpy.run_path('/home/user/redteam/quality_method.py', run_name='__main__')
+  File "/usr/lib/python3.10/runpy.py", line 289, in run_path
+    return _run_module_code(code, init_globals, run_name,
+  File "/usr/lib/python3.10/runpy.py", line 96, in _run_module_code
+    _run_code(code, mod_globals, init_globals,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/user/redteam/quality_method.py", line 91, in <module>
+    result = module.run_pendulum_eval()
+  File "/home/user/method/run_reproduction.py", line 203, in run_pendulum_eval
+    components = _build_parametric_pendulum_components()
+  File "/home/user/method/run_reproduction.py", line 42, in _build_parametric_pendulum_components
+    ca, AcadosModel, AcadosOcp, AcadosOcpSolver = _import_acados()
+  File "/home/user/method/run_reproduction.py", line 28, in _import_acados
+    from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+  File "/home/user/method/acados/interfaces/acados_template/acados_template/__init__.py", line 37, in <module>
+    from .acados_ocp import AcadosOcp
+  File "/home/user/method/acados/interfaces/acados_template/acados_template/acados_ocp.py", line 34, in <module>
+    from scipy.linalg import block_diag
+  File "/home/user/environment/vendor_py310/scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/scipy/linalg/__init__.py", line 205, in <module>
+    from ._basic import *
+  File "/home/user/environment/vendor_py310/scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/scipy/linalg/_basic.py", line 14, in <module>
+    from ._decomp import _asarray_validated
+  File "/home/user/environment/vendor_py310/scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/scipy/linalg/_decomp.py", line 24, in <module>
+    from scipy._lib._util import _asarray_validated
+  File "/home/user/environment/vendor_py310/scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/scipy/_lib/_util.py", line 13, in <module>
+    from scipy._lib._array_api import array_namespace, is_numpy, xp_size
+  File "/home/user/environment/vendor_py310/scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/scipy/_lib/_array_api.py", line 18, in <module>
+    from scipy._lib.array_api_compat import (
+  File "/home/user/environment/vendor_py310/scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/scipy/_lib/array_api_compat/numpy/__init__.py", line 1, in <module>
+    from numpy import * # noqa: F403
+  File "/home/user/environment/vendor_py310/numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/numpy/__init__.py", line 346, in __getattr__
+    import numpy.ma as ma
+  File "/home/user/environment/vendor_py310/numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/numpy/ma/__init__.py", line 42, in <module>
+    from . import core
+ImportError: cannot import name 'core' from partially initialized module 'numpy.ma' (most likely due to a circular import) (/home/user/environment/vendor_py310/numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64/numpy/ma/__init__.py)
