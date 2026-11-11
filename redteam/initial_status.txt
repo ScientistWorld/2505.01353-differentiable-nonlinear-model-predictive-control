@@ -1,0 +1,5 @@
+ M README.md
+ M manifest.json
+ D trajectory/session.json
+?? .git-shims/
+?? redteam/
