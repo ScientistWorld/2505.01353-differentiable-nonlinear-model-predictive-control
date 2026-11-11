@@ -3,29 +3,67 @@
     "pendulum_sensitivity_accuracy": {
       "results": {
         "acados_exact_hessian": {
-          "log10_sensitivity_advantage_vs_gn": 6.115184760809773,
-          "log10_error_regression_vs_exact": 0.0
+          "frac_sens_accurate": 1.0,
+          "mean_log10_sens_rel_err": -7.879254031664703,
+          "frac_u0_accurate": 1.0
         },
         "gauss_newton_approx": {
-          "log10_sensitivity_advantage_vs_gn": 0.0,
-          "log10_error_regression_vs_exact": 6.115184760809773
+          "frac_sens_accurate": 0.2,
+          "mean_log10_sens_rel_err": -1.625729514933059,
+          "frac_u0_accurate": 1.0
+        },
+        "unconstrained_ift": {
+          "frac_sens_accurate": 0.0,
+          "mean_log10_sens_rel_err": 0.0,
+          "frac_u0_accurate": 0.0
         }
       }
     },
-    "bounded_lqr_umax_high": {
+    "pendulum_smoothed_sensitivity": {
       "results": {
-        "acados": {
-          "per_problem_solve_and_sens_ms": 0.2581429998826934
+        "acados_exact_hessian": {
+          "frac_sens_accurate": 0.5388888888888889,
+          "mean_log10_sens_rel_err": -3.504390248130908,
+          "frac_u0_accurate": 0.6444444444444445
+        },
+        "gauss_newton_approx": {
+          "frac_sens_accurate": 0.0,
+          "mean_log10_sens_rel_err": -0.3464509053005703,
+          "frac_u0_accurate": 0.6444444444444445
+        },
+        "unconstrained_ift": {
+          "frac_sens_accurate": 0.0,
+          "mean_log10_sens_rel_err": 0.0,
+          "frac_u0_accurate": 0.0
         }
       }
     },
-    "bounded_lqr_umax_low": {
+    "bounded_lqr_adjoint_accuracy": {
       "results": {
-        "acados": {
-          "per_problem_solve_and_sens_ms": 0.6433472267417528,
-          "tight_to_loose_runtime_ratio": 2.4922125606121637
+        "acados_exact_hessian": {
+          "frac_sens_accurate": 0.975,
+          "mean_log10_sens_rel_err": -8.557746936844419,
+          "frac_u0_accurate": 1.0
+        },
+        "gauss_newton_approx": {
+          "frac_sens_accurate": 0.975,
+          "mean_log10_sens_rel_err": -8.557746936844419,
+          "frac_u0_accurate": 1.0
+        },
+        "unconstrained_ift": {
+          "frac_sens_accurate": 0.5125,
+          "mean_log10_sens_rel_err": -5.125,
+          "frac_u0_accurate": 0.5125
         }
       }
+    }
+  },
+  "_evaluation": {
+    "status": "ok",
+    "n_instances": {
+      "pendulum_sensitivity_accuracy": 240,
+      "pendulum_smoothed_sensitivity": 180,
+      "bounded_lqr_adjoint_accuracy": 160
     }
   }
 }

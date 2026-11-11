@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: false
 milestone: core_claim
-notes: "Hardening job (resubmit after preemptions): build train/test ground truth with branch warm starts (resumable), score reference on train/hidden test, run variants (better clip/tight, weaker, FD brute force) and shortcuts through the hidden-test evaluator."
+notes: "Hardening job (resubmit after cache-dir bug): reuse train ground truth, score reference on train, build hidden-test ground truth (resumable), score reference on test, then variants/FD brute force/shortcuts through the hidden-test evaluator."
