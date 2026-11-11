@@ -71,7 +71,8 @@ def load_hidden_set() -> dict:
         sys.path.insert(0, HERE)
         import groundtruth  # noqa: E402  (eval/test only)
 
-        hidden = groundtruth.build_split(SPLIT_SEED, prefixes=ID_PREFIXES, log=_log, **SPLIT_SIZES)
+        hidden = groundtruth.build_split(SPLIT_SEED, prefixes=ID_PREFIXES, log=_log,
+                                         checkpoint_path=CACHE_PATH + ".partial", **SPLIT_SIZES)
         os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
         tmp = CACHE_PATH + ".tmp"
         with open(tmp, "w", encoding="utf-8") as handle:

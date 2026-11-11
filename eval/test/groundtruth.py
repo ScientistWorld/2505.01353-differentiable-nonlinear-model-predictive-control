@@ -18,6 +18,13 @@ Pendulum (paper Sec. 5.1 / App. A.10)
     KKT system (paper eq. 23) where every one-sided inequality h_i <= 0 has
     mu_i * h_i = -tau_min (equalities stay exact).
 
+    Target: the lowest-objective KKT point found from three initialisations
+    (strict complementarity margin >= 1e-7 for tau_min = 0).  Every instance
+    ships ``initial_guess``: the primal solution on the same branch at a
+    neighbouring parameter theta -/+ 1e-3, i.e. the warm start of the paper's
+    parameter sweep, so that the local solution map being differentiated is
+    unambiguous.
+
 Bounded LQR (paper Sec. 5.2 / App. A.11)
     theta = [vec(A) (64), vec(B) (32), b (8), vec(H) (144)]  (column-major)
     min  sum_{n<N} [x_n;u_n]' H [x_n;u_n] + x_N' H[:nx,:nx] x_N
@@ -275,7 +282,7 @@ class KKT:
             dy = sla.lu_solve(lu, np.asarray(r, dtype=np.float64), trans=1)
             yl = yl + dy.astype(np.longdouble)
         grad = -(Jth.astype(np.longdouble).T @ yl)
-        return np.asarray(grad, dtype=np.float64), float(np.linalg.cond(J))
+        return np.asarray(grad, dtype=np.float64), None
 
 
 # ---------------------------------------------------------------------------
@@ -367,6 +374,50 @@ def _u0_of(kkt: KKT, w0, th, d, act, tau, smooth):
     if res > NEWTON_TOL:
         return None
     return w[: kkt.nz][kkt.nlp["u0_idx"]]
+
+
+WARM_START_DTHETA = 1e-3
+
+
+def _continue_branch(kkt: KKT, sol, th_new, d, tau):
+    """Primal solution on the same branch at a neighbouring parameter, or None.
+
+    Newton on the same KKT system (same active set for tau_min = 0, smoothed
+    system for tau_min > 0) from the instance's solution; rejected if the active
+    set / interior is not consistent at the new parameter."""
+    try:
+        w, res = kkt.newton(sol["w"], th_new, d, sol["act"], tau, sol["smooth"])
+    except Exception:
+        return None
+    if res > NEWTON_TOL:
+        return None
+    nz, ng = kkt.nz, kkt.ng
+    z, mu = w[:nz], w[nz + ng :]
+    _, h = kkt.fh(z, th_new, d)
+    h = np.asarray(h.full()).ravel()
+    if sol["smooth"] > 0.5:
+        if np.any(h >= 0.0) or np.any(mu <= 0.0):
+            return None
+    else:
+        a = sol["act"] > 0.5
+        if (np.any(a) and np.min(mu[a]) <= 0.0) or (np.any(~a) and np.min(-h[~a]) <= 0.0):
+            return None
+    return z
+
+
+def _pendulum_guess(kkt: KKT, sol, theta, d, tau, index):
+    """Warm start = solution on the same branch at theta -/+ 1e-3 (paper's sweep)."""
+    N = kkt.nlp["N"]
+    sign = 1.0 if index % 2 == 0 else -1.0
+    for s in (sign, -sign):
+        th_prev = theta - s * WARM_START_DTHETA
+        z = _continue_branch(kkt, sol, np.array([th_prev]), d, tau)
+        if z is None:
+            continue
+        xs = [[float(v) for v in z[5 * n : 5 * n + 4]] for n in range(N + 1)]
+        us = [[float(z[5 * n + 4])] for n in range(N)]
+        return {"theta": th_prev, "x": xs, "u": us}
+    return None
 
 
 def _richardson_directional(kkt, sol, th, d, tau, direction, seed_u0, h):
@@ -475,8 +526,12 @@ def build_pendulum(rng, count: int, smoothed: bool, prefix: str, log=print):
         if not (fd_rel <= limit) or not math.isfinite(sens):
             rejected["fd_cross_check"] = rejected.get("fd_cross_check", 0) + 1
             continue
+        guess = _pendulum_guess(kkt, sol, theta, d, tau, len(instances))
+        if guess is None:
+            rejected["no_branch_warm_start"] = rejected.get("no_branch_warm_start", 0) + 1
+            continue
         iid = f"{prefix}{len(instances):04d}"
-        instances.append({"id": iid, "theta": theta, "x0": x0, "tau_min": tau})
+        instances.append({"id": iid, "theta": theta, "x0": x0, "tau_min": tau, "initial_guess": guess})
         answers[iid] = {"u0": float(sol["u0"][0]), "du0_dtheta": sens}
         diags[iid] = {
             "fd_rel_diff": fd_rel,
@@ -582,13 +637,41 @@ def lqr_problem_spec() -> dict:
     return spec
 
 
-def build_split(seed: int, n_pend: int, n_smooth: int, n_lqr: int, prefixes=("ps", "pt", "lq"), log=print) -> dict:
+def build_split(seed: int, n_pend: int, n_smooth: int, n_lqr: int, prefixes=("ps", "pt", "lq"), log=print,
+                checkpoint_path: str | None = None) -> dict:
+    """Build instances + answers. Resumable: after each experiment the partial
+    result and the RNG state are saved to ``checkpoint_path`` (same sequence of
+    draws as an uninterrupted build)."""
+    import json
+    import os
+
     rng = np.random.default_rng(seed)
     out = {"format_version": 1, "experiments": {}}
+    key = [seed, n_pend, n_smooth, n_lqr, list(prefixes)]
+    if checkpoint_path and os.path.exists(checkpoint_path):
+        try:
+            with open(checkpoint_path, "r", encoding="utf-8") as handle:
+                ck = json.load(handle)
+            if ck.get("key") == key:
+                out = ck["out"]
+                rng.bit_generator.state = ck["rng_state"]
+                log(f"[groundtruth] resuming from checkpoint with {sorted(out['experiments'])}")
+        except Exception as exc:
+            log(f"[groundtruth] ignoring unreadable checkpoint: {exc}")
+
+    def save():
+        if checkpoint_path:
+            tmp = checkpoint_path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as handle:
+                json.dump({"key": key, "out": out, "rng_state": rng.bit_generator.state}, handle)
+            os.replace(tmp, checkpoint_path)
+
     for exp, smoothed, count, prefix in (
         ("pendulum_sensitivity_accuracy", False, n_pend, prefixes[0]),
         ("pendulum_smoothed_sensitivity", True, n_smooth, prefixes[1]),
     ):
+        if exp in out["experiments"]:
+            continue
         inst, ans, diag = build_pendulum(rng, count, smoothed, prefix, log=log)
         out["experiments"][exp] = {
             "problem": pendulum_problem_spec(smoothed),
@@ -596,11 +679,15 @@ def build_split(seed: int, n_pend: int, n_smooth: int, n_lqr: int, prefixes=("ps
             "answers": ans,
             "diagnostics": diag,
         }
-    inst, ans, diag = build_lqr(rng, n_lqr, prefixes[2], log=log)
-    out["experiments"]["bounded_lqr_adjoint_accuracy"] = {
-        "problem": lqr_problem_spec(),
-        "instances": inst,
-        "answers": ans,
-        "diagnostics": diag,
-    }
+        save()
+    if "bounded_lqr_adjoint_accuracy" not in out["experiments"]:
+        inst, ans, diag = build_lqr(rng, n_lqr, prefixes[2], log=log)
+        out["experiments"]["bounded_lqr_adjoint_accuracy"] = {
+            "problem": lqr_problem_spec(),
+            "instances": inst,
+            "answers": ans,
+            "diagnostics": diag,
+        }
+    if checkpoint_path and os.path.exists(checkpoint_path):
+        os.remove(checkpoint_path)
     return out

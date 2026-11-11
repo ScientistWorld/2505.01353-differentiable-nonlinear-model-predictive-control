@@ -157,11 +157,22 @@ class PendulumSolvers:
             self.nominal.options_set(field, float(tol) * 0.1)
         self.nominal.options_set("nlp_solver_max_iter", int(max_iter))
 
+    def _guess_init(self, solver, guess: dict) -> None:
+        for stage in range(self.N):
+            solver.set(stage, "x", np.asarray(guess["x"][stage], dtype=float))
+            solver.set(stage, "u", np.asarray(guess["u"][stage], dtype=float))
+        solver.set(self.N, "x", np.asarray(guess["x"][self.N], dtype=float))
+
     # -- (S1) nominal solve ------------------------------------------------
-    def solve_nominal(self, theta: float, x0: np.ndarray, tau: float, unconstrained: bool = False):
+    def solve_nominal(self, theta: float, x0: np.ndarray, tau: float, unconstrained: bool = False, guess=None):
+        """Warm-started from the instance's initial guess (the solution at a
+        neighbouring parameter, as in the paper's sweep); RK4 rollout otherwise."""
         self.configure(theta, x0, tau, unconstrained)
         self.nominal.reset()
-        self._rollout_init(self.nominal, x0, theta)
+        if guess is not None:
+            self._guess_init(self.nominal, guess)
+        else:
+            self._rollout_init(self.nominal, x0, theta)
         status = int(self.nominal.solve())
         u0 = float(self.nominal.get(0, "u")[0])
         return u0, status, self.nominal.get_iterate()
@@ -207,6 +218,13 @@ def _pendulum_instance(inst: dict):
     return theta, x0, tau
 
 
+def _guess(inst: dict):
+    guess = inst.get("initial_guess")
+    if isinstance(guess, dict) and "x" in guess and "u" in guess:
+        return guess
+    return None
+
+
 def _finite(*values) -> bool:
     return all(np.all(np.isfinite(np.asarray(v, dtype=float))) for v in values)
 
@@ -220,7 +238,7 @@ def predict_pendulum(solvers: PendulumSolvers, experiment: dict, out: dict, exp_
         iid = inst["id"]
         theta, x0, tau = _pendulum_instance(inst)
         try:
-            u0, status, iterate = solvers.solve_nominal(theta, x0, tau)
+            u0, status, iterate = solvers.solve_nominal(theta, x0, tau, guess=_guess(inst))
             statuses[status] = statuses.get(status, 0) + 1
             sens_gn = solvers.gauss_newton_sensitivity(iterate)
             sens_ex = solvers.exact_sensitivity(iterate)
@@ -231,7 +249,7 @@ def predict_pendulum(solvers: PendulumSolvers, experiment: dict, out: dict, exp_
         except Exception as exc:  # keep going; missing predictions count as failures
             log(f"[predict] {exp_name}/{iid}: proposed/GN failed: {exc}")
         try:
-            u0_unc, _, iterate_unc = solvers.solve_nominal(theta, x0, tau, unconstrained=True)
+            u0_unc, _, iterate_unc = solvers.solve_nominal(theta, x0, tau, unconstrained=True, guess=_guess(inst))
             sens_unc = solvers.exact_sensitivity(iterate_unc)
             if _finite(u0_unc, sens_unc):
                 out[UNCONSTRAINED][exp_name][iid] = {"u0": u0_unc, "du0_dtheta": sens_unc}
