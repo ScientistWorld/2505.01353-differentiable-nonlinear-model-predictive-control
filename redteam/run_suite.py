@@ -28,6 +28,10 @@ try:
     for name in CASES:
         folder = AUDIT / name
         folder.mkdir(parents=True, exist_ok=True)
+        # Resume completed cases if a later one or the node fails.
+        if (folder / 'status.json').exists():
+            print('ALREADY_EVALUATED', name, flush=True)
+            continue
         start = time.monotonic()
         print('START', name, flush=True)
         with (folder / 'run.log').open('w') as log:

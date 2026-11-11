@@ -9,6 +9,8 @@ for audit_dep_dir in /home/user/environment/vendor_py310/*; do
         export PYTHONPATH="$audit_dep_dir:${PYTHONPATH}"
     fi
 done
+python3 /home/user/redteam/prepare_runtime.py
+export PYTHONPATH=/home/user/redteam/generated/runtime_numpy:${PYTHONPATH}
 for audit_casadi_dir in /home/user/environment/vendor_py310/casadi-*; do
     if [ -d "$audit_casadi_dir/casadi" ]; then
         export LD_LIBRARY_PATH="$audit_casadi_dir/casadi:${LD_LIBRARY_PATH}"
