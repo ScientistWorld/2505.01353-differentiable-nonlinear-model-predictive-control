@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
-"""Held-out test-slice scorer for differentiable NMPC result artifacts.
+"""Hidden test evaluator for the solution-sensitivity gym.
 
-The test slice reads the same method artifact as the visible train slice, but
-scores derived consistency metrics instead of the direct development metrics.
-When `scoring/scores_train.json` exists, its experiment/method keys define the
-exact set of entries to score here.
+Protocol (identical to the visible train slice, different instances):
+
+1. Load the hidden instance set and its answers (``cache/hidden_set.json``;
+   regenerated from the private seed below with an independent
+   IPOPT/Newton/IFT solver if the cache is missing).  Answers stay in memory.
+2. Write the public part of the instances (no answers) to a temporary file and
+   run the method's predictor ``bash scripts/predict.sh INSTANCES PREDICTIONS``.
+3. Recompute every scored number from the raw predictions (u0 and solution
+   sensitivities) against the answers.  Nothing the method writes besides those
+   raw values is read.  Any method key found in the predictions is scored in
+   every experiment; missing, malformed, non-finite or wrong-solution entries
+   count as failed instances, and a failed run gets the worst value of every
+   metric in every experiment.
+
+Scoring needs only the Python standard library.
 """
 
 from __future__ import annotations
@@ -13,197 +24,284 @@ import argparse
 import json
 import math
 import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
 
-DEFAULT_INPUT = "/home/user/checkpoints/reproduction_results.json"
-DEFAULT_OUTPUT = "/home/user/scoring/scores_test.json"
-DEFAULT_TRAIN_SCORES = "/home/user/scoring/scores_train.json"
-EPS = 1e-12
-LQR_BATCH_SIZE = 128.0
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+CACHE_PATH = os.path.join(HERE, "cache", "hidden_set.json")
+DEFAULT_OUTPUT = os.path.join(ROOT, "scoring", "scores_test.json")
+TRAIN_SCORES = os.path.join(ROOT, "scoring", "scores_train.json")
+PREDICT_CMD = ["bash", os.path.join(ROOT, "scripts", "predict.sh")]
+PREDICT_TIMEOUT_S = 3 * 3600
 
+SPLIT_SEED = 905_771_243
+SPLIT_SIZES = {"n_pend": 240, "n_smooth": 180, "n_lqr": 160}
+ID_PREFIXES = ("ps", "pt", "lq")
 
-TRAIN_METRICS_BY_EXPERIMENT = {
-    "pendulum_sensitivity_accuracy": ["sensitivity_max_error"],
-    "bounded_lqr_umax_high": ["solve_and_sens_time_ms"],
-    "bounded_lqr_umax_low": ["solve_and_sens_time_ms"],
+EXPERIMENTS = {
+    "pendulum_sensitivity_accuracy": {"kind": "scalar", "u0_tol": 1e-5},
+    "pendulum_smoothed_sensitivity": {"kind": "scalar", "u0_tol": 1e-5},
+    "bounded_lqr_adjoint_accuracy": {"kind": "vector", "u0_tol": 1e-5, "n_u": 4, "n_theta": 248},
 }
+SENS_ACCURATE_REL = 1e-4   # relative sensitivity error counted as "accurate"
+LOG10_FLOOR = -10.0        # per-instance log10 error is clipped to [LOG10_FLOOR, 0]
+METRICS = ("frac_sens_accurate", "mean_log10_sens_rel_err", "frac_u0_accurate")
+WORST = {"frac_sens_accurate": 0.0, "mean_log10_sens_rel_err": 0.0, "frac_u0_accurate": 0.0}
 
 
-def _load_json(path: str) -> dict:
-    with open(path, "r", encoding="utf-8") as handle:
-        return json.load(handle)
+def _log(msg: str) -> None:
+    print(f"[eval-test] {msg}", flush=True)
 
 
-def _experiment_results(scores: dict, experiment_name: str) -> dict:
-    try:
-        results = scores["experiments"][experiment_name]["results"]
-    except KeyError as exc:
-        raise ValueError(f"Missing experiment results: {experiment_name}") from exc
-    if not isinstance(results, dict) or not results:
-        raise ValueError(f"{experiment_name}/results must be a non-empty object")
-    return results
+# ---------------------------------------------------------------------------
+# Hidden set
+# ---------------------------------------------------------------------------
 
 
-def _metric(scores: dict, experiment_name: str, method_name: str, metric_name: str) -> float:
-    results = _experiment_results(scores, experiment_name)
-    try:
-        value = results[method_name][metric_name]
-    except KeyError as exc:
-        raise ValueError(
-            f"Missing metric {experiment_name}/{method_name}/{metric_name}"
-        ) from exc
-    if not isinstance(value, (int, float)):
-        raise ValueError(f"{experiment_name}/{method_name}/{metric_name} must be numeric")
-    return float(value)
-
-
-def _nonnegative_metric(scores: dict, experiment_name: str, method_name: str, metric_name: str) -> float:
-    value = _metric(scores, experiment_name, method_name, metric_name)
-    if not math.isfinite(value) or value < 0.0:
-        raise ValueError(
-            f"{experiment_name}/{method_name}/{metric_name} must be a finite nonnegative value"
-        )
-    return value
-
-
-def _validate_results(scores: dict) -> None:
-    if not isinstance(scores.get("experiments"), dict):
-        raise ValueError("Input must contain an 'experiments' object")
-
-    for experiment_name, metric_names in TRAIN_METRICS_BY_EXPERIMENT.items():
-        for method_name, method_scores in _experiment_results(scores, experiment_name).items():
-            if not isinstance(method_scores, dict):
-                raise ValueError(f"{experiment_name}/{method_name} must be a metric object")
-            for metric_name in metric_names:
-                _nonnegative_metric(scores, experiment_name, method_name, metric_name)
-
-
-def _train_method_index(raw_scores: dict, train_scores_path: str) -> dict[str, list[str]]:
-    """Return experiment -> method names to score on the held-out slice."""
-    if os.path.exists(train_scores_path):
-        train_scores = _load_json(train_scores_path)
+def load_hidden_set() -> dict:
+    if os.path.exists(CACHE_PATH):
+        with open(CACHE_PATH, "r", encoding="utf-8") as handle:
+            hidden = json.load(handle)
     else:
-        train_scores = raw_scores
+        _log("hidden-set cache missing: regenerating ground truth (needs numpy/scipy/casadi)")
+        sys.path.insert(0, HERE)
+        import groundtruth  # noqa: E402  (eval/test only)
 
-    if not isinstance(train_scores.get("experiments"), dict):
-        raise ValueError("Train scores must contain an 'experiments' object")
+        hidden = groundtruth.build_split(SPLIT_SEED, prefixes=ID_PREFIXES, log=_log, **SPLIT_SIZES)
+        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+        tmp = CACHE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump(hidden, handle)
+        os.replace(tmp, CACHE_PATH)
+    for name in EXPERIMENTS:
+        exp = hidden["experiments"][name]
+        ids = [inst["id"] for inst in exp["instances"]]
+        if not ids or len(set(ids)) != len(ids) or set(ids) != set(exp["answers"]):
+            raise RuntimeError(f"hidden set for {name} is inconsistent")
+    return hidden
 
-    method_index: dict[str, list[str]] = {}
-    for experiment_name in TRAIN_METRICS_BY_EXPERIMENT:
-        method_index[experiment_name] = sorted(_experiment_results(train_scores, experiment_name))
-    return method_index
 
-
-def _test_scores(scores: dict, method_index: dict[str, list[str]]) -> dict:
-    """Compute derived consistency metrics for the held-out test slice."""
-    output = {
+def public_view(hidden: dict) -> dict:
+    return {
+        "format_version": hidden.get("format_version", 1),
         "experiments": {
-            "pendulum_sensitivity_accuracy": {"results": {}},
-            "bounded_lqr_umax_high": {"results": {}},
-            "bounded_lqr_umax_low": {"results": {}},
-        }
+            name: {"problem": hidden["experiments"][name]["problem"], "instances": hidden["experiments"][name]["instances"]}
+            for name in EXPERIMENTS
+        },
     }
 
-    exact_err = _nonnegative_metric(
-        scores,
-        "pendulum_sensitivity_accuracy",
-        "acados_exact_hessian",
-        "sensitivity_max_error",
-    )
-    gn_err = _nonnegative_metric(
-        scores,
-        "pendulum_sensitivity_accuracy",
-        "gauss_newton_approx",
-        "sensitivity_max_error",
-    )
 
-    for method_name in method_index["pendulum_sensitivity_accuracy"]:
-        err = _nonnegative_metric(
-            scores,
-            "pendulum_sensitivity_accuracy",
-            method_name,
-            "sensitivity_max_error",
-        )
-        output["experiments"]["pendulum_sensitivity_accuracy"]["results"][method_name] = {
-            "log10_sensitivity_advantage_vs_gn": math.log10((gn_err + EPS) / (err + EPS)),
-            "log10_error_regression_vs_exact": math.log10((err + EPS) / (exact_err + EPS)),
-        }
-
-    high_times = {}
-    for method_name in method_index["bounded_lqr_umax_high"]:
-        high_time = _nonnegative_metric(
-            scores,
-            "bounded_lqr_umax_high",
-            method_name,
-            "solve_and_sens_time_ms",
-        )
-        high_times[method_name] = high_time
-        output["experiments"]["bounded_lqr_umax_high"]["results"][method_name] = {
-            "per_problem_solve_and_sens_ms": high_time / LQR_BATCH_SIZE,
-        }
-
-    for method_name in method_index["bounded_lqr_umax_low"]:
-        low_time = _nonnegative_metric(
-            scores,
-            "bounded_lqr_umax_low",
-            method_name,
-            "solve_and_sens_time_ms",
-        )
-        result = {
-            "per_problem_solve_and_sens_ms": low_time / LQR_BATCH_SIZE,
-        }
-        if method_name in high_times:
-            result["tight_to_loose_runtime_ratio"] = low_time / max(high_times[method_name], EPS)
-        output["experiments"]["bounded_lqr_umax_low"]["results"][method_name] = result
-
-    return output
+# ---------------------------------------------------------------------------
+# Scoring (pure Python)
+# ---------------------------------------------------------------------------
 
 
-def _assert_method_keys_match(train_index: dict[str, list[str]], test_scores: dict) -> None:
-    for experiment_name, train_methods in train_index.items():
-        test_methods = sorted(test_scores["experiments"][experiment_name]["results"])
-        if test_methods != train_methods:
-            raise ValueError(
-                f"Method-key mismatch for {experiment_name}: "
-                f"train={train_methods}, test={test_methods}"
-            )
+def _num(value):
+    if type(value) not in (int, float):  # rejects bool, str, None, containers
+        return None
+    try:
+        value = float(value)
+    except (OverflowError, ValueError):
+        return None
+    return value if math.isfinite(value) else None
 
 
-def evaluate_all(
-    input_path: str = DEFAULT_INPUT,
-    output_path: str = DEFAULT_OUTPUT,
-    train_scores_path: str = DEFAULT_TRAIN_SCORES,
-) -> dict:
-    """Write the held-out split with consistency metrics from the same artifact."""
-    if not os.path.exists(input_path):
-        raise FileNotFoundError(
-            f"Missing method results artifact: {input_path}. "
-            "Run scripts/method.sh or provide --input."
-        )
+def _num_list(value, length):
+    if not isinstance(value, list) or len(value) != length:
+        return None
+    out = [_num(v) for v in value]
+    return None if any(v is None for v in out) else out
 
-    raw_scores = _load_json(input_path)
-    _validate_results(raw_scores)
-    method_index = _train_method_index(raw_scores, train_scores_path)
-    scores = _test_scores(raw_scores, method_index)
-    _assert_method_keys_match(method_index, scores)
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as handle:
+
+def _norm(values) -> float:
+    big = max((abs(v) for v in values), default=0.0)
+    if big == 0.0:
+        return 0.0
+    if not math.isfinite(big):
+        return math.inf
+    return big * math.sqrt(sum((v / big) ** 2 for v in values))
+
+
+def score_instance(spec: dict, answer: dict, pred) -> dict:
+    """Per-instance record: validity, solution check, relative sensitivity error."""
+    rec = {"valid": False, "u0_ok": False, "u0_err": None, "rel_err": None, "sens_ok": False, "log10": 0.0}
+    if not isinstance(pred, dict):
+        return rec
+    if spec["kind"] == "scalar":
+        u0, sens = _num(pred.get("u0")), _num(pred.get("du0_dtheta"))
+        if u0 is None or sens is None:
+            return rec
+        u0_true, sens_true = float(answer["u0"]), float(answer["du0_dtheta"])
+        u0_err = abs(u0 - u0_true) / max(1.0, abs(u0_true))
+        rel = abs(sens - sens_true) / max(1.0, abs(sens_true))
+    else:
+        u0 = _num_list(pred.get("u0"), spec["n_u"])
+        adj = _num_list(pred.get("adjoint"), spec["n_theta"])
+        if u0 is None or adj is None:
+            return rec
+        u0_true = [float(v) for v in answer["u0"]]
+        adj_true = [float(v) for v in answer["adjoint"]]
+        u0_err = max(abs(a - b) for a, b in zip(u0, u0_true)) / max(1.0, max(abs(b) for b in u0_true))
+        rel = _norm([a - b for a, b in zip(adj, adj_true)]) / max(1.0, _norm(adj_true))
+    u0_ok = math.isfinite(u0_err) and u0_err <= spec["u0_tol"]
+    rec["valid"] = True
+    rec["u0_err"] = u0_err
+    rec["u0_ok"] = bool(u0_ok)
+    rec["rel_err"] = rel
+    if u0_ok and math.isfinite(rel):
+        rec["sens_ok"] = rel <= SENS_ACCURATE_REL
+        rec["log10"] = LOG10_FLOOR if rel <= 0.0 else min(0.0, max(LOG10_FLOOR, math.log10(rel)))
+    return rec
+
+
+def instance_records(hidden: dict, method_preds) -> dict:
+    """experiment -> list of per-instance records (fixed order and size)."""
+    out = {}
+    for name, spec in EXPERIMENTS.items():
+        exp = hidden["experiments"][name]
+        preds = method_preds.get(name) if isinstance(method_preds, dict) else None
+        if not isinstance(preds, dict):
+            preds = {}
+        out[name] = [score_instance(spec, exp["answers"][inst["id"]], preds.get(inst["id"])) for inst in exp["instances"]]
+    return out
+
+
+def aggregate(records: list) -> dict:
+    n = len(records)
+    return {
+        "frac_sens_accurate": sum(1.0 for r in records if r["sens_ok"]) / n,
+        "mean_log10_sens_rel_err": sum(r["log10"] for r in records) / n,
+        "frac_u0_accurate": sum(1.0 for r in records if r["u0_ok"]) / n,
+    }
+
+
+def _clean_name(name: str, taken: set) -> str:
+    base = str(name).lstrip("_") or "unnamed"
+    cand, k = base, 1
+    while cand in taken:
+        k += 1
+        cand = f"{base}_{k}"
+    return cand
+
+
+def failed_scores(method_names, reason: str) -> dict:
+    names = list(method_names) or ["submission"]
+    return {
+        "experiments": {
+            name: {"results": {m: dict(WORST) for m in names}} for name in EXPERIMENTS
+        },
+        "_evaluation": {"status": "failed", "reason": reason},
+    }
+
+
+def score_predictions(hidden: dict, predictions) -> dict:
+    if not isinstance(predictions, dict) or not isinstance(predictions.get("methods"), dict) or not predictions["methods"]:
+        return failed_scores(fallback_method_names(), "predictions missing or contain no methods")
+    scores = {"experiments": {name: {"results": {}} for name in EXPERIMENTS}}
+    taken: set = set()
+    for raw_name in sorted(predictions["methods"], key=str):
+        name = _clean_name(raw_name, taken)
+        taken.add(name)
+        recs = instance_records(hidden, predictions["methods"][raw_name])
+        for exp_name in EXPERIMENTS:
+            scores["experiments"][exp_name]["results"][name] = aggregate(recs[exp_name])
+    scores["_evaluation"] = {"status": "ok", "n_instances": {n: len(hidden["experiments"][n]["instances"]) for n in EXPERIMENTS}}
+    return scores
+
+
+def fallback_method_names() -> list:
+    try:
+        with open(TRAIN_SCORES, "r", encoding="utf-8") as handle:
+            train = json.load(handle)
+        names = set()
+        for exp in train.get("experiments", {}).values():
+            names.update(k for k in exp.get("results", {}) if not str(k).startswith("_"))
+        return sorted(names) or ["submission"]
+    except Exception:
+        return ["submission"]
+
+
+# ---------------------------------------------------------------------------
+# Orchestration
+# ---------------------------------------------------------------------------
+
+
+def _write(path: str, scores: dict) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as handle:
         json.dump(scores, handle, indent=2)
-    print(f"Test scores written to {output_path}")
+    os.replace(tmp, path)
+
+
+def run_predictor(public: dict, predict_cmd, timeout_s: float, keep_predictions: str | None = None):
+    workroot = os.path.join(ROOT, "tmp")
+    os.makedirs(workroot, exist_ok=True)
+    workdir = tempfile.mkdtemp(prefix="split_eval_", dir=workroot)
+    inst_path = os.path.join(workdir, "instances.json")
+    pred_path = os.path.join(workdir, "predictions.json")
+    with open(inst_path, "w", encoding="utf-8") as handle:
+        json.dump(public, handle)
+    t0 = time.time()
+    try:
+        proc = subprocess.run(list(predict_cmd) + [inst_path, pred_path], cwd=ROOT, timeout=timeout_s)
+        code = proc.returncode
+    except subprocess.TimeoutExpired:
+        code = "timeout"
+    _log(f"predictor exit={code} after {time.time() - t0:.1f}s")
+    predictions, reason = None, None
+    if code != 0:
+        reason = f"predictor exit status {code}"
+    elif not os.path.exists(pred_path):
+        reason = "predictor wrote no predictions file"
+    else:
+        try:
+            with open(pred_path, "r", encoding="utf-8") as handle:
+                predictions = json.load(handle)
+        except Exception as exc:
+            reason = f"unreadable predictions: {exc}"
+    if keep_predictions and os.path.exists(pred_path):
+        os.makedirs(os.path.dirname(os.path.abspath(keep_predictions)), exist_ok=True)
+        shutil.copyfile(pred_path, keep_predictions)
+    shutil.rmtree(workdir, ignore_errors=True)
+    return predictions, reason
+
+
+def evaluate(output_path: str = DEFAULT_OUTPUT, predict_cmd=None, keep_predictions: str | None = None,
+             timeout_s: float = PREDICT_TIMEOUT_S, predictions_file: str | None = None) -> dict:
+    if os.path.exists(output_path):
+        os.remove(output_path)
+    _write(output_path, failed_scores(fallback_method_names(), "evaluation did not complete"))
+    hidden = load_hidden_set()
+    if predictions_file is not None:
+        with open(predictions_file, "r", encoding="utf-8") as handle:
+            predictions, reason = json.load(handle), None
+    else:
+        predictions, reason = run_predictor(public_view(hidden), predict_cmd or PREDICT_CMD, timeout_s, keep_predictions)
+    if reason is not None:
+        scores = failed_scores(fallback_method_names(), reason)
+    else:
+        scores = score_predictions(hidden, predictions)
+    _write(output_path, scores)
+    _log(f"wrote {output_path} ({scores['_evaluation']['status']})")
     return scores
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", default=DEFAULT_INPUT, help="method results JSON")
-    parser.add_argument("--output", default=DEFAULT_OUTPUT, help="test scores JSON path")
-    parser.add_argument(
-        "--train-scores",
-        default=DEFAULT_TRAIN_SCORES,
-        help="train scores JSON whose experiment/method keys must be mirrored",
-    )
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--output", default=DEFAULT_OUTPUT)
+    parser.add_argument("--build-cache-only", action="store_true", help="only (re)build the hidden-set cache")
+    parser.add_argument("--rescore", default=None, help="score an existing predictions JSON instead of running the predictor")
     args = parser.parse_args()
-    scores = evaluate_all(args.input, args.output, args.train_scores)
-    print(json.dumps(scores, indent=2))
+    if args.build_cache_only:
+        load_hidden_set()
+        return
+    scores = evaluate(args.output, predictions_file=args.rescore)
+    print(json.dumps(scores["experiments"], indent=2))
 
 
 if __name__ == "__main__":

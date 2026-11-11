@@ -1,30 +1,8 @@
 #!/bin/bash
-# Run the paper's simplest baseline comparison.
-#
-# The paper's most important baseline for the core claim is the Gauss-Newton
-# Hessian approximation on the pendulum sensitivity task. This script runs the
-# pendulum evaluation and stores the resulting baseline/proposed metrics in a
-# baseline artifact for inspection.
-
-set -e
-
+# The baselines (gauss_newton_approx: IFT with the Gauss-Newton Hessian;
+# unconstrained_ift: IFT after dropping all inequality constraints) are written
+# by the same predictor as the proposed method, so one train evaluation scores
+# all of them. Results: scoring/scores_train.json.
+set -euo pipefail
 cd /home/user
-
-export ACADOS_SOURCE_DIR=/home/user/method/acados
-export LD_LIBRARY_PATH=/home/user/method/acados/lib:${LD_LIBRARY_PATH}
-export PYTHONPATH=/home/user/method/acados/interfaces/acados_template:${PYTHONPATH}
-
-mkdir -p baseline
-
-python3 - <<'PY'
-import json
-import sys
-sys.path.insert(0, "/home/user/method")
-import run_reproduction
-
-results = run_reproduction.run_pendulum_eval()
-with open("/home/user/baseline/pendulum_gn_baseline.json", "w", encoding="utf-8") as f:
-    json.dump(results, f, indent=2)
-
-print(json.dumps(results, indent=2))
-PY
+bash /home/user/scripts/evaluate_train.sh

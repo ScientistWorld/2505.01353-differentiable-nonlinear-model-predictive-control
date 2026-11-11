@@ -111,8 +111,23 @@ def _build_parametric_pendulum_components():
     }
 
 
-def _build_pendulum_ocp(components, *, hessian_approx: str, name: str):
-    """Create the pendulum OCP used in Section 5.1 / Appendix A.10."""
+def _build_pendulum_ocp(
+    components,
+    *,
+    hessian_approx: str,
+    name: str,
+    qp_cond_n: int | None = None,
+    sens_t_lam_min: float | None = None,
+):
+    """Create the pendulum OCP used in Section 5.1 / Appendix A.10.
+
+    ``qp_cond_n`` selects the HPIPM partial-condensing horizon. The nominal
+    solver keeps the stable 5-block setting; the paper's sensitivity solver
+    uses no condensing (``qp_cond_n = N``), which is also the only setting for
+    which acados documents ``setup_qp_matrices_and_factorize``.
+    ``sens_t_lam_min`` overrides acados' clipping of (t, lambda) before the
+    sensitivity factorization (acados default 1e-9).
+    """
     AcadosOcp = components["AcadosOcp"]
     model = components["model"]
     ocp = AcadosOcp()
@@ -125,9 +140,13 @@ def _build_pendulum_ocp(components, *, hessian_approx: str, name: str):
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     # Partial condensing with a small block count is materially more stable for
     # this ill-conditioned constrained pendulum than leaving the full N=50 QP.
-    ocp.solver_options.qp_solver_cond_N = min(5, components["n_horizon"])
+    if qp_cond_n is None:
+        qp_cond_n = min(5, components["n_horizon"])
+    ocp.solver_options.qp_solver_cond_N = int(qp_cond_n)
     ocp.solver_options.qp_solver_ric_alg = 0
     ocp.solver_options.qp_solver_cond_ric_alg = 0
+    if sens_t_lam_min is not None:
+        ocp.solver_options.solution_sens_qp_t_lam_min = float(sens_t_lam_min)
     # The Appendix A.10 pendulum problem is ill-conditioned near the path
     # constraint.  A large initial IPM barrier parameter repeatedly produced
     # ACADOS_MINSTEP iterates with meaningless sensitivities in this runtime.

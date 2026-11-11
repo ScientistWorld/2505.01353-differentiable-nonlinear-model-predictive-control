@@ -1,37 +1,17 @@
 #!/bin/bash
-# Train-slice evaluation entry point.
+# Visible train evaluation. No arguments.
 #
-# Mirrors scripts/evaluate.sh: read the pre-generated method results artifact
-# and write a scoring JSON, without importing method code.
+# Same protocol as the hidden test on the public instances of eval/train/:
+# runs scripts/predict.sh, recomputes every metric from raw predictions, and
+# writes scoring/scores_train.json for every method found in the predictions.
 
-set -e
+set -euo pipefail
 
 cd /home/user
-
-export PYTHONNOUSERSITE=1
-
-for dep_dir in /home/user/environment/vendor_py310/*; do
-    if [ -d "${dep_dir}" ]; then
-        export PYTHONPATH="${dep_dir}:${PYTHONPATH}"
-    fi
-done
-
-CASADI_VENDOR_DIR="$(find /home/user/environment/vendor_py310 -maxdepth 1 -mindepth 1 -type d -name 'casadi-*' 2>/dev/null | head -n 1)"
-if [ -n "${CASADI_VENDOR_DIR}" ]; then
-    export LD_LIBRARY_PATH="${CASADI_VENDOR_DIR}/casadi:${LD_LIBRARY_PATH}"
-fi
-
+bash /home/user/scripts/repair_vendor_runtime.sh >/dev/null
+source /home/user/scripts/_runtime_env.sh
 mkdir -p scoring
 
 echo "=== Evaluating train slice ==="
-
-python3 -c "
-import sys
-sys.path.insert(0, '/home/user/eval/train')
-import evaluator
-evaluator.evaluate_all()
-"
-
-echo ''
-echo '=== Train evaluation complete ==='
-echo 'Results written to scoring/scores_train.json'
+python3 /home/user/eval/train/evaluator.py
+echo "=== Train evaluation complete: scoring/scores_train.json ==="
