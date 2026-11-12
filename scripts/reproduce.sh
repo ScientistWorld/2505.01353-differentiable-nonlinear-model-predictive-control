@@ -33,18 +33,11 @@ if [ -n "${CASADI_VENDOR_DIR}" ]; then
 fi
 
 echo "=================================================="
-echo "Reproducing: Differentiable Nonlinear MPC"
-echo "Paper: 2505.01353"
+echo "Reproducing: Differentiable Nonlinear MPC (paper 2505.01353)"
 echo "=================================================="
-
-# Run all method experiments and score their raw result artifact.
-echo ""
-echo "=== Running Method ==="
-bash scripts/method.sh
-
-echo ""
-echo "=================================================="
-echo "Reproduction complete!"
-echo "Results: scoring/scores.json"
-echo "Compare: python3 validate.py --compare"
-echo "=================================================="
+# Reference method (acados two-solver IFT sensitivities) and its baselines,
+# scored on the visible train instances; the hidden test runs the same
+# predictor through scripts/evaluate_test.sh.
+bash scripts/evaluate_train.sh
+cp scoring/scores_train.json scoring/scores.json
+echo "Results: scoring/scores_train.json (and scoring/scores.json)"

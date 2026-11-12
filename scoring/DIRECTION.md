@@ -1,21 +1,24 @@
 # Research Direction
 
-## In Scope
+## In scope
 
-The gym is about **computing useful sensitivities for parameterized optimal control problems** while keeping the benchmark workload fixed. Strong follow-up work should primarily improve this scored target:
+Better ways to compute **correct, precise solution sensitivities of constrained nonlinear OCPs**, scored on hidden instances:
 
-- Lower sensitivity error on `pendulum_sensitivity_accuracy`
+- **More precise exact-map sensitivities:** better convergence of the nominal solve before differentiating, better handling of nearly-active constraints and multiplier/slack clipping, iterative refinement of the KKT solve.
+- **Correct derivatives of the smoothed (barrier) solution map:** the reproduced acados implementation is systematically biased there, and the error grows with `tau_min`.
+- **Robust adjoints for constrained problems:** many parameters, and tight control bounds with degenerate or near-degenerate active sets.
+- **Robust nominal solves from the given warm start**, so the derivative is taken at the right solution.
 
-The bounded-LQR entries record solve-plus-sensitivity runtime for context, but they are not part of the composite score because wall-clock time is hardware-dependent. Valid directions include better numerical stability, better solver engineering, more efficient sensitivity computation, or more robust handling of constrained operating points, as long as the benchmark problems and score definitions stay fixed.
+## Out of scope
 
-## Out of Scope
+- Changing the problem to make derivatives easier, for example answering exact instances with a smoothed solution, or ignoring constraints. The solution-correctness constraint (`frac_u0_accurate`) and per-instance gating catch this.
+- Reporting anything other than the computed `u0` and derivative (self-reported errors or scores are ignored).
+- Using the evaluator's ground truth or code.
 
-The gym is not meant for approaches that sidestep the benchmark by changing the task family. In particular, a future scientist should not:
+## Note on finite differences
 
-- Replace the control problem with supervised prediction or policy imitation and still claim the same experiment names
-- Score a finite-difference-only brute-force procedure as if it were the same kind of method being benchmarked here
-- Change the benchmark instances to make them easier while preserving the original score keys
+Finite differences of the solution map are a valid but expensive way to obtain a derivative (one or more extra solves per parameter). The gym scores accuracy, not cost.
+- **At the paper's tolerance**, central differences rank below the reference.
+- **With a 100× tighter nominal solve plus Richardson extrapolation**, they rank slightly above it. They still rank below the paper's implicit-function-theorem sensitivities computed with that same tighter solve.
 
-## Practical Interpretation
-
-This workspace should reward genuine progress on differentiable, parameter-sensitive optimal control benchmarks. Improvements should come from better ways to produce accurate and efficient sensitivities on the same problems, not from redefining the problems.
+The paper's contribution is to obtain exact derivatives from a single factorization. A method that wants to beat the reference should improve the derivative computation itself.

@@ -34,3 +34,11 @@ Using a barrier parameter τ_min > 0 produces a continuously differentiable appr
 2. **Secondary**: Speedups of 3.6x–520x over mpc.pytorch and 19x–160x over cvxpygen for bounded LQR problems
 3. **Tertiary**: Adjoint sensitivity computation is ~2.5x faster than full forward Jacobian for single-adjoint queries
 4. **Pitfall warning**: Using Gauss-Newton Hessian approximation instead of exact Hessian gives completely wrong sensitivities (shown in Remark 3 and Sec 5.1)
+
+## Reproduction Notes (gym reference, `method/predict.py`)
+
+- **Nominal solver (S1):** acados SQP with the Gauss-Newton Hessian, tolerance 1e-8 (paper Sec. 5.1). It is warm-started from the instance's `initial_guess`, as in the paper's parameter sweep. The HPIPM initial barrier is the paper's `mu0 = 1e3` for smoothed (`tau_min > 0`) solves and `1e-3` otherwise, with the other value as a single fallback.
+- **Sensitivity solver (S2-S5):** exact Hessian, classic Riccati, no condensing (as in the paper's code). The primal-dual iterate is transferred, then the solver factorizes and evaluates the forward sensitivity for the one-parameter pendulum (the paper's Figure 2 code). For the 248-parameter LQR, the exact-Hessian solver is both nominal and sensitivity solver (Sec. 5.2), and the adjoint is evaluated.
+- **Baselines written by the same predictor:**
+  - `gauss_newton_approx`: identical sensitivity solver but with the Gauss-Newton Hessian (Remark 3).
+  - `unconstrained_ift`: inequality constraints dropped, then exact-Hessian IFT (related work limited to unconstrained formulations).

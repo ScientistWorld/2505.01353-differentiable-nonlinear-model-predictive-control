@@ -2,6 +2,8 @@
 
 ## Final Status
 
+- 2026-11-12 hardening iteration: rebuilt the hidden test around raw predictions on evaluator-held instances with an independent ground truth. The milestone is now `core_claim_plus`; see `HARDENING.md` for the full audit, variants and shortcuts.
+
 - Current milestone: `core_claim`
 - 2026-05-15 reactivation audit: launched paper-analysis and implementation-inspection subagents, then re-ran `python3 validate.py --compare` locally. The workspace remains a valid `core_claim` reproduction: the pendulum experiment implements the paper's two-solver exact-Hessian sensitivity workflow and the evaluator stays method-independent. No higher milestone is claimed because the Section 5.3 chain-of-masses script is still exploratory and not integrated into the authoritative scoring path.
 - 2026-05-15 packaging hardening: audited the final workspace with paper-summary and implementation-check subagents. Future acados generated C code and solver JSON files now go under `tmp/acados_generated/` instead of the repository root, and the previously tracked root generated artifacts have been removed from version control. `scripts/run.sh` now regenerates the method artifact before evaluating train/test splits, so a future submitted job no longer depends on a stale checkpoint.

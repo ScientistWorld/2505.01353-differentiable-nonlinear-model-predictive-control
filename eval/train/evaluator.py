@@ -173,11 +173,11 @@ def instance_records(hidden: dict, method_preds) -> dict:
 
 
 def aggregate(records: list) -> dict:
-    n = len(records)
+    n = len(records)  # math.fsum: exactly rounded, identical on every Python version
     return {
-        "frac_sens_accurate": sum(1.0 for r in records if r["sens_ok"]) / n,
-        "mean_log10_sens_rel_err": sum(r["log10"] for r in records) / n,
-        "frac_u0_accurate": sum(1.0 for r in records if r["u0_ok"]) / n,
+        "frac_sens_accurate": math.fsum(1.0 for r in records if r["sens_ok"]) / n,
+        "mean_log10_sens_rel_err": math.fsum(r["log10"] for r in records) / n,
+        "frac_u0_accurate": math.fsum(1.0 for r in records if r["u0_ok"]) / n,
     }
 
 

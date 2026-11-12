@@ -6,7 +6,7 @@
 set -euo pipefail
 
 cd /home/user
-RUN_HARDENING_CHECKS="${RUN_HARDENING_CHECKS:-1}"
+RUN_HARDENING_CHECKS="${RUN_HARDENING_CHECKS:-0}"  # 1: also rerun the hardening audit
 
 echo "========================================"
 echo "DIFFERENTIABLE NMPC SOLUTION-SENSITIVITY GYM"

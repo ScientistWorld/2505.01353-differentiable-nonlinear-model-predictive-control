@@ -1,6 +1,6 @@
 # Reproduction Milestones
 
-**Current: core_claim**
+**Current: core_claim_plus**
 
 ## Progress Log
 
@@ -66,5 +66,12 @@
 - Removed method-specific path assumptions from the evaluator shell entry points and clarified the graphical pendulum reference target in `scoring/reference.json`.
 - Re-ran `bash scripts/evaluate.sh`, `bash scripts/evaluate_train.sh`, `bash scripts/evaluate_test.sh`, and `python3 validate.py --compare`; all checks pass.
 
+
+### [2026-11-12] - core_claim_plus
+- Hardening iteration: the hidden test runs the predictor on instances only `eval/test/` holds and recomputes every metric from raw predictions against an independent IPOPT/Newton/IFT ground truth (see `HARDENING.md`).
+- Core claim on 193 hidden pendulum instances (paper Sec. 5.1): the exact-Hessian two-solver IFT is accurate on 1.000 of them (mean log10 relative error -7.77). The Gauss-Newton Hessian is accurate on 0.005 ("completely off", Remark 3).
+- Additional settings: Sec. 5.2 bounded-LQR adjoints over 248 parameters are accurate on 0.971 (App. A.11: adjoints match). Smoothed-map sensitivities (Fig. 2, Thm. 3) are accurate on 0.811, with a documented tau_min-dependent bias of the acados implementation.
+- Not reproduced: the wall-clock speed-ups against mpc.pytorch/cvxpygen (Table 1) and the chain example (Sec. 5.3).
+
 ## Stop Justification
-- Completed at milestone `core_claim`.
+- Completed at milestone `core_claim_plus` (core claim on hidden instances plus the LQR-adjoint and smoothed-map settings; speed-up claims are wall-clock and not reproduced).

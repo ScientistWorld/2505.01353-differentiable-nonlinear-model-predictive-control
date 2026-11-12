@@ -4,12 +4,12 @@
       "results": {
         "acados_exact_hessian": {
           "frac_sens_accurate": 1.0,
-          "mean_log10_sens_rel_err": -7.895437541345814,
+          "mean_log10_sens_rel_err": -7.895437541345815,
           "frac_u0_accurate": 1.0
         },
         "gauss_newton_approx": {
           "frac_sens_accurate": 0.0,
-          "mean_log10_sens_rel_err": -0.1718945159051168,
+          "mean_log10_sens_rel_err": -0.17189451590511684,
           "frac_u0_accurate": 1.0
         },
         "unconstrained_ift": {
