@@ -4,12 +4,12 @@
       "results": {
         "acados_exact_hessian": {
           "frac_sens_accurate": 1.0,
-          "mean_log10_sens_rel_err": -7.776048892566663,
+          "mean_log10_sens_rel_err": -7.767234798580888,
           "frac_u0_accurate": 1.0
         },
         "gauss_newton_approx": {
           "frac_sens_accurate": 0.0051813471502590676,
-          "mean_log10_sens_rel_err": -0.15712182501064306,
+          "mean_log10_sens_rel_err": -0.157121825046868,
           "frac_u0_accurate": 1.0
         },
         "unconstrained_ift": {
@@ -23,12 +23,12 @@
       "results": {
         "acados_exact_hessian": {
           "frac_sens_accurate": 0.8111111111111111,
-          "mean_log10_sens_rel_err": -5.413218766246501,
+          "mean_log10_sens_rel_err": -5.413218153943031,
           "frac_u0_accurate": 0.9888888888888889
         },
         "gauss_newton_approx": {
           "frac_sens_accurate": 0.0,
-          "mean_log10_sens_rel_err": -0.5433710590802079,
+          "mean_log10_sens_rel_err": -0.543371059081228,
           "frac_u0_accurate": 0.9888888888888889
         },
         "unconstrained_ift": {

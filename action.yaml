@@ -5,4 +5,4 @@ action: submit
 gpus: 0
 test: false
 milestone: core_claim
-notes: "Hardening job 3: reuse cached ground truth; rerun reference (paper mu0 for smoothed solves) on train/hidden test, then variants (better clip/tight, weaker, FD brute force) and shortcuts through the hidden-test evaluator."
+notes: "Hardening job 4: reference with forward pendulum sensitivities (paper Fig. 2 code) on train/hidden test; variants incl. adjoint path, FD brute force, shortcuts through the hidden-test evaluator."
