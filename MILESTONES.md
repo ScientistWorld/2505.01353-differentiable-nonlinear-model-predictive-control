@@ -74,4 +74,4 @@
 - Not reproduced: the wall-clock speed-ups against mpc.pytorch/cvxpygen (Table 1) and the chain example (Sec. 5.3).
 
 ## Stop Justification
-- Completed at milestone `core_claim_plus` (core claim on hidden instances plus the LQR-adjoint and smoothed-map settings; speed-up claims are wall-clock and not reproduced).
+- Completed at milestone `core_claim`.

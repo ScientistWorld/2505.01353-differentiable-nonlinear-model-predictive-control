@@ -1,8 +1,6 @@
 # Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends.
-action: submit
-gpus: 0
-test: false
-milestone: core_claim
-notes: "Hardening job 4: reference with forward pendulum sensitivities (paper Fig. 2 code) on train/hidden test; variants incl. adjoint path, FD brute force, shortcuts through the hidden-test evaluator."
+action: done
+milestone: core_claim_plus
+notes: "Hardened gym: hidden test runs the predictor on eval/test-only instances, scores raw u0/sensitivities vs independent IPOPT+Newton+IFT ground truth; better variants score higher (paired ~10 SE), all reported shortcuts closed; tight-tolerance brute-force FD and acados smoothed-sensitivity bias documented as open in HARDENING.md."
