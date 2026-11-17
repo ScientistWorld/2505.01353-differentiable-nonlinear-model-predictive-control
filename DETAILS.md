@@ -34,7 +34,7 @@ How do we compute accurate **parametric solution sensitivities** of constrained,
 
 All problems are fully specified in each instance file (`problem` block); a method must solve exactly the stated problem.
 
-**Parametric pendulum on a cart** (`pendulum_sensitivity_accuracy`, `pendulum_smoothed_sensitivity`). States `x = (p, phi, v, omega)`, force `u`, scalar parameter `theta` = cart mass. `N = 50` intervals, `T = 2 s`, `dt = T/N`; dynamics: one RK4 step per interval of
+**Parametric pendulum on a cart** (`pendulum_sensitivity_accuracy`, `pendulum_smoothed_sensitivity`, `pendulum_near_active_set_change`). States `x = (p, phi, v, omega)`, force `u`, scalar parameter `theta` = cart mass. `N = 50` intervals, `T = 2 s`, `dt = T/N`; dynamics: one RK4 step per interval of
 
 ```
 p' = v,  phi' = omega
@@ -54,25 +54,28 @@ s.t.  x_0 = x0,  x_{n+1} = RK4(x_n, u_n; theta),
 - With `tau_min = 0` the target is the exact solution map.
 - With `tau_min > 0` it is the smoothed map. Here every one-sided inequality `h_i <= 0` satisfies `mu_i * h_i = -tau_min` instead of complementarity, and the equalities stay exact.
 
-The problem is multimodal. Each pendulum instance therefore ships `initial_guess`: the primal solution on the same branch at a neighbouring parameter `theta -/+ 1e-3`, i.e. the warm start of a parameter sweep. The target is the locally optimal solution on that branch (it is also the best local minimum the evaluator found).
+The problem is multimodal. Each pendulum instance therefore ships `initial_guess`: the primal solution on the same branch at a neighbouring parameter `theta -/+ 1e-3`, i.e. the warm start of a parameter sweep. The target is the locally optimal solution on that branch (for the first two experiments it is also the best local minimum the evaluator found).
 
-**Bounded LQR** (`bounded_lqr_adjoint_accuracy`).
-- **Size and parameters:** `N = 20`, `nx = 8`, `nu = 4`. The 248 parameters are `theta = [vec(A) (64), vec(B) (32), b (8), vec(H) (144)]`, each `vec` column-major.
+`pendulum_near_active_set_change` uses the exact map (`tau_min = 0`) at parameters close to a constraint switch: some inequality is within `1e-6` to `1e-3` of becoming active or inactive (its multiplier, or its slack, is that small), while strict complementarity, LICQ and second-order sufficiency still hold, so `d u0/d theta` is well defined. The warm start lies on the side away from the switch, and the initial state is always perturbed.
+
+**Bounded LQR** (`bounded_lqr_adjoint_accuracy`, and the scaled-up `bounded_lqr_large_adjoint`).
+- **Size and parameters:** `N = 20`, `nx = 8`, `nu = 4`. The 248 parameters are `theta = [vec(A) (64), vec(B) (32), b (8), vec(H) (144)]`, each `vec` column-major. The scaled-up experiment has `nx = 16`, `nu = 8` and 976 parameters in the same layout (`vec(A)` 256, `vec(B)` 128, `b` 16, `vec(H)` 576).
 - **Problem:**
 
 ```
-min  sum_{n<N} [x_n; u_n]' H [x_n; u_n] + x_N' H[:8,:8] x_N
+min  sum_{n<N} [x_n; u_n]' H [x_n; u_n] + x_N' H[:nx,:nx] x_N
 s.t. x_0 = x0,  x_{n+1} = A x_n + B u_n + b,  |u_n| <= u_max (elementwise)
 ```
 
-- **Data:** `A = I + 0.2 M`, and `M`, `B`, `b`, `x0` are standard normal; `H = I`; `u_max` is `1` or `1e4`.
-- **Required output:** `u0` and the adjoint `d(seed . u0)/d theta` (248 numbers) for the instance's `seed_u0`.
+- **Data:** `A = I + 0.2 M` (`I + 0.2 sqrt(8/nx) M` at `nx = 16`, the same open-loop spread), and `M`, `B`, `b`, `x0` are standard normal; `H = I`; `u_max` is `1` or `1e4`.
+- **Required output:** `u0` and the adjoint `d(seed . u0)/d theta` (248 or 976 numbers) for the instance's `seed_u0`.
 
 ## Success Criteria
 
 1. **Correct solution:** the reported `u0` is the optimal first control of the stated problem (on the warm-start branch for the pendulum).
 2. **Accurate sensitivities:** the reported derivative matches the exact derivative of that solution map. The smoothed problem is differentiated as smoothed, not replaced by something easier.
 3. **Robustness across instances:** this covers many parameter values, initial states, smoothing levels and constraint activity patterns, including near-degenerate ones.
+4. **Efficiency:** each experiment's instances are solved and differentiated within a CPU budget that fits one solution, one factorization and one backsolve per instance with a wide margin, but not one or more extra solves per parameter (see `briefing/evaluation.md`).
 
 ---
 
@@ -116,9 +119,10 @@ Using a barrier parameter τ_min > 0 produces a continuously differentiable appr
 ## Reproduction Notes (gym reference, `method/predict.py`)
 
 - **Nominal solver (S1):** acados SQP with the Gauss-Newton Hessian, tolerance 1e-8 (paper Sec. 5.1). It is warm-started from the instance's `initial_guess`, as in the paper's parameter sweep. The HPIPM initial barrier is the paper's `mu0 = 1e3` for smoothed (`tau_min > 0`) solves and `1e-3` otherwise, with the other value as a single fallback.
-- **Sensitivity solver (S2-S5):** exact Hessian, classic Riccati, no condensing (as in the paper's code). The primal-dual iterate is transferred, then the solver factorizes and evaluates the forward sensitivity for the one-parameter pendulum (the paper's Figure 2 code). For the 248-parameter LQR, the exact-Hessian solver is both nominal and sensitivity solver (Sec. 5.2), and the adjoint is evaluated.
+- **Sensitivity solver (S2-S5):** exact Hessian, classic Riccati, no condensing (as in the paper's code). The primal-dual iterate is transferred, then the solver factorizes and evaluates the forward sensitivity for the one-parameter pendulum (the paper's Figure 2 code). For the LQRs (248 and 976 parameters), the exact-Hessian solver is both nominal and sensitivity solver (Sec. 5.2), and the adjoint is evaluated.
+- **acados sign fix:** the vendored acados (and upstream at the time of writing) adds the parametric part of the constraint Hessian, `d/dp [dh/dux^T (lam_u - lam_l)]`, to the parameter Jacobian of the Lagrangian gradient with sign -1, while the QP Hessian and the stationarity residual use `+(lam_u - lam_l)^T h`. For `tau_min > 0` both sides of the pendulum path constraint `|theta * p| <= 1.5` carry nonzero multipliers, and the sign error biased every smoothed sensitivity. `scripts/patch_acados.sh` flips the sign (one token in `ocp_nlp_constraints_bgh.c`) and the build scripts apply it. Exact-map (`tau_min = 0`) results are unchanged, since there the term only moves the multiplier of an active constraint.
 - **Baselines written by the same predictor:**
-  - `gauss_newton_approx`: identical sensitivity solver but with the Gauss-Newton Hessian (Remark 3).
+  - `gauss_newton_approx`: identical sensitivity solver but with the Gauss-Newton Hessian (Remark 3). For the convex LQRs the Gauss-Newton Hessian equals the exact one, so the same solver is reused.
   - `unconstrained_ift`: inequality constraints dropped, then exact-Hessian IFT (related work limited to unconstrained formulations).
 
 ---
@@ -133,7 +137,7 @@ A method is a predictor with one entry point:
 bash scripts/predict.sh INSTANCES_JSON PREDICTIONS_JSON
 ```
 
-- `INSTANCES_JSON` holds, per experiment, the full `problem` specification and a list of `instances`. These contain parameters, initial state, `tau_min` or `u_max` and `seed_u0`, plus the pendulum `initial_guess`. They never contain answers.
+- The evaluator calls the predictor **once per experiment**. Each `INSTANCES_JSON` holds one experiment: its full `problem` specification and a list of `instances`. These contain parameters, initial state, `tau_min` or `u_max` and `seed_u0`, plus the pendulum `initial_guess`. They never contain answers.
 - The predictor writes
 
 ```json
@@ -141,16 +145,28 @@ bash scripts/predict.sh INSTANCES_JSON PREDICTIONS_JSON
 ```
 
 - **Pendulum experiments:** each entry is `{"u0": float, "du0_dtheta": float}`.
-- **LQR experiment:** each entry is `{"u0": [4 floats], "adjoint": [248 floats]}`.
-- **Several methods:** a predictor may write several named methods (e.g. a proposal and its baselines). Every name is scored in every experiment.
+- **LQR experiments:** each entry is `{"u0": [nu floats], "adjoint": [n_theta floats]}` (`nu = 4, n_theta = 248` or `nu = 8, n_theta = 976`).
+- **Several methods:** a predictor may write several named methods (e.g. a proposal and its baselines). Every name seen in any call is scored in every experiment. Only the entries of the experiment a call was given are read from that call.
 
 `scripts/evaluate_train.sh` runs the predictor on the visible instances in `eval/train/` and writes `scoring/scores_train.json`. The hidden test `scripts/evaluate_test.sh` (no arguments) runs the same predictor on instances that only the hidden test holds. It writes `scoring/scores_test.json`. Both evaluators compute the ground truth independently of any method: IPOPT solve, Newton refinement of the KKT system to machine precision, an implicit-function-theorem derivative, and a finite-difference cross-check.
+
+## Compute budget
+
+Each predictor call may use at most
+
+```
+150 + n_instances * c   CPU seconds,   c = 1.0 (pendulum experiments), 0.3 (248-parameter LQR), 0.15 (976-parameter LQR)
+```
+
+measured over the predictor's whole process tree: threads, child processes and detached descendants all count (orphans are re-parented to the evaluator). A call that exceeds it is killed and the run fails. CPU time, not wall-clock time, is counted, and wall-clock time is never scored. A wall-clock safety stop at four times the budget plus 10 minutes only catches hung predictors.
+
+For scale, the reference predictor (proposed method plus two baselines) used 17–21 CPU s per pendulum call, 7 CPU s on the 248-parameter LQR and 51 CPU s on the 976-parameter LQR, about 45 s of which is acados code generation. Budgets on the hidden test are 300–343, 192 and 219 s. The budget fits one solution, one factorization and one backsolve per instance with a wide margin. One or more extra solves per parameter, as in finite differences, do not fit on the 976-parameter LQR: about 1.8 CPU s per instance for central differences.
 
 ## Metrics (per experiment, per method)
 
 For each instance:
 - **Solution check:** `u0` is correct if its relative error, `|du0| / max(1, |u0_true|)` (max over components for the LQR), is `<= 1e-5`.
-- **Sensitivity error:** relative error `|ds| / max(1, |s_true|)` (2-norm for the 248-vector adjoint).
+- **Sensitivity error:** relative error `|ds| / max(1, |s_true|)` (2-norm for the adjoint vector).
 
 | metric | direction | definition |
 |---|---|---|
@@ -162,17 +178,18 @@ For each instance:
 
 - Missing, malformed, boolean, string or non-finite entries make that instance count as failed (worst value).
 - An experiment the method omits gets the worst value in every metric.
-- A crashed, empty or timed-out predictor gets the worst value in every metric of every experiment.
+- A crashed, empty, timed-out or over-budget predictor call fails the run: every method gets the worst value in every metric of every experiment.
 - Only the raw `u0` and sensitivity values are read; any other field (self-reported errors, flags, scores) is ignored.
-- Wall-clock time is not scored.
 
 ## Experiments and Weights
 
 | experiment | weight | what it measures |
 |---|---|---|
-| `pendulum_sensitivity_accuracy` | 0.5 | exact solution-map sensitivity of the nonlinear constrained pendulum OCP |
-| `pendulum_smoothed_sensitivity` | 0.2 | sensitivity of the barrier-smoothed solution map, `tau_min` in {1e-4, 1e-3, 1e-2} |
-| `bounded_lqr_adjoint_accuracy` | 0.3 | adjoint sensitivity w.r.t. 248 parameters of a bounded LQR, `u_max` in {1, 1e4} |
+| `pendulum_sensitivity_accuracy` | 0.35 | exact solution-map sensitivity of the nonlinear constrained pendulum OCP |
+| `pendulum_smoothed_sensitivity` | 0.15 | sensitivity of the barrier-smoothed solution map, `tau_min` in {1e-4, 1e-3, 1e-2} |
+| `pendulum_near_active_set_change` | 0.15 | exact-map sensitivity at parameters close to a constraint switch (smallest strict-complementarity margin 1e-6 to 1e-3) |
+| `bounded_lqr_adjoint_accuracy` | 0.15 | adjoint sensitivity w.r.t. 248 parameters of a bounded LQR, `u_max` in {1, 1e4} |
+| `bounded_lqr_large_adjoint` | 0.20 | the same at `nx = 16, nu = 8`: adjoint w.r.t. 976 parameters |
 
 Metric coefficients: `frac_sens_accurate` 1.0, `mean_log10_sens_rel_err` 0.5, `frac_u0_accurate` 0.5. Instances whose answer is a trivially zero sensitivity are excluded: pendulum `u0` at the force bound, and LQR with every `u0` component at its bound.
 
@@ -1798,6 +1815,91 @@ Metric coefficients: `frac_sens_accurate` 1.0, `mean_log10_sens_rel_err` 0.5, `f
 - Core claim on 193 hidden pendulum instances (paper Sec. 5.1): the exact-Hessian two-solver IFT is accurate on 1.000 of them (mean log10 relative error -7.77). The Gauss-Newton Hessian is accurate on 0.005 ("completely off", Remark 3).
 - Additional settings: Sec. 5.2 bounded-LQR adjoints over 248 parameters are accurate on 0.971 (App. A.11: adjoints match). Smoothed-map sensitivities (Fig. 2, Thm. 3) are accurate on 0.811, with a documented tau_min-dependent bias of the acados implementation.
 - Not reproduced: the wall-clock speed-ups against mpc.pytorch/cvxpygen (Table 1) and the chain example (Sec. 5.3).
+
+</details>
+
+### Iteration 11: claude-opus-5-5 (hardener)
+- **Milestone**: `core_claim` | **Status**: done
+- **Working time**: 42m | **GPU**: 0.0h
+- **Jobs**: 7 total (5 completed, 1 failed)
+
+<details>
+<summary>Progress Log</summary>
+
+### [2026-05-15 16:28] - method_runs
+- Audited the inherited workspace and found the pendulum two-solver acados implementation is a real implementation of the paper's IFT/IPM sensitivity algorithm.
+- Fixed the LQR benchmark before resubmission: stage-0 equality bounds now enforce `x_0 = x0_batch[i]`, and the packed cost matrix `H` is part of `p_global` in the cost expression.
+- Updated `scripts/run.sh` so submitted jobs regenerate `checkpoints/reproduction_results.json` through `scripts/method.sh` before scoring train/test slices.
+- Local syntax checks and `python3 validate.py --compare` pass; corrected end-to-end method results are pending a compute job.
+
+### [2026-05-15 16:33] - method_runs
+- Continued audit after handoff. The method path still implements the paper's actual acados IFT/IPM sensitivity workflow, and `eval/` remains method-independent.
+- Existing `checkpoints/reproduction_results.json` and `scoring/scores.json` predate the LQR fix, so `core_claim` is not restored from stale artifacts.
+- `python3 validate.py --compare` passes structurally on the stale artifact; submitting the corrected end-to-end CPU job again to regenerate and score fresh results.
+
+### [2026-05-15 16:39] - method_runs
+- Job `e7e3072e-d55` failed before the method ran because the vendored NumPy tree was missing `numpy/ma/core.py`; the broad `core.*` ignore rule had omitted that wheel file from the workspace.
+- Restored the missing NumPy `core.py` and `core.pyi` files from the local wheel, unignored them, and added `scripts/repair_vendor_runtime.sh` so offline compute jobs repair/validate the vendored runtime before importing acados.
+- Resubmitting the same corrected end-to-end CPU reproduction job after the environment packaging fix.
+
+### [2026-05-15 16:58] - method_runs
+- Job `f23c2850-d14` confirmed the vendored runtime repair works: the method built acados solvers, regenerated raw artifacts, and completed both bounded-LQR timing experiments.
+- The job failed in the held-out scorer because the pendulum branch wrote a negative sentinel after incorrectly trying to solve the NLP with the exact-Hessian sensitivity solver; this is not the paper's two-solver sensitivity workflow.
+- Patched the pendulum reproduction to solve only the nominal NLP, transfer the iterate to the exact-Hessian solver, factorize the exact-Hessian QP, and evaluate adjoint sensitivities against a finite-difference nominal solution map.
+- Tightened the held-out evaluator to reject non-finite or negative metric values with a clear validation error.
+
+### [2026-05-15 17:08] - method_runs
+- Job `2709a928-9ac` failed earlier in the pendulum path because every nominal sweep solve returned acados status `ACADOS_MINSTEP`; the iterates were finite, but the new guard discarded them all.
+- Updated the nominal pendulum guard to accept finite status-4 iterates, fail on non-finite values or unexpected statuses, and print a status histogram plus finite-difference statuses for auditability.
+
+### [2026-05-15 16:58] - method_runs
+- Job `76839165-68a` completed the packaged script path, but the regenerated pendulum artifact did not support the core claim: all nominal solves were status `ACADOS_MINSTEP`, the finite-difference sensitivity was zero, and exact-Hessian error was larger than Gauss-Newton.
+- Kept the milestone at `method_runs` and patched the pendulum solver options to use a smaller HPIPM barrier initialization with more QP iterations.
+- Added core-claim sanity checks so future submitted runs fail if the regenerated exact-Hessian sensitivity is non-finite, negative, worse than Gauss-Newton, or too inaccurate for the Section 5.1 reproduction.
+
+### [2026-05-15 17:06] - method_runs
+- Job `8abe96cf-11c` failed in the new pendulum sanity guard, confirming that the previous solver-option change still produced a degenerate finite-difference sensitivity rather than a valid core-claim result.
+- Patched the pendulum nominal solve to start from a dynamics-consistent RK4 rollout and changed partial condensing to `qp_solver_cond_N=5`, matching the stable local acados smoke configuration while preserving the paper's OCP and sensitivity algorithm.
+- Expanded the degenerate-sensitivity error message to include finite-difference values and nominal status counts for the next audit log.
+
+### [2026-05-15 17:10] - core_claim
+- Job `6c53c2a5-7ad` completed the packaged `scripts/run.sh` path inside the compute container and regenerated method, visible-train, and held-out-test score artifacts.
+- The pendulum core claim is restored from fresh compute-node results: exact-Hessian adjoint sensitivity error is `3.5699e-05`, while the Gauss-Newton approximation error is `46.542`; the nominal sweep solved 20/21 points cleanly and used one finite `ACADOS_MINSTEP` iterate.
+- `python3 validate.py --compare` passes after the job, including scoring schema checks, eval/method import separation, and train/test split validation.
+
+### [2026-05-15 17:44] - core_claim
+- Audited the final packaging state with two subagents and local validation.
+- Redirected future acados generated C code and solver JSON files from the workspace root to `tmp/acados_generated/`, and removed the previously tracked generated artifacts from version control.
+- Updated `scripts/run.sh` to regenerate `checkpoints/reproduction_results.json` before split evaluation, then re-ran `bash scripts/evaluate.sh` and `python3 validate.py --compare` successfully.
+
+### [2026-05-15 17:51] - core_claim
+- Completed final verification of the research gym packaging.
+- Clarified that bounded-LQR wall-clock timing is diagnostic-only with zero scoring coefficients, while the scored gym target remains pendulum sensitivity accuracy.
+- Re-ran `bash scripts/evaluate.sh` and `python3 validate.py --compare`; both pass.
+
+### [2026-05-15 17:57] - core_claim
+- Reactivation audit used two subagents: one re-extracted the paper algorithm and experiments, and one inspected the packaged implementation and scorer.
+- Confirmed the authoritative path still implements the paper's actual acados IFT/IPM sensitivity workflow: nominal solve, exact-Hessian factorization, and adjoint sensitivity evaluation against finite differences.
+- Re-ran `python3 validate.py --compare`; all schema, import-separation, split-score, and scoring checks pass.
+- Left the milestone at `core_claim` because Section 5.3 chain sensitivities remain exploratory and are not packaged as an authoritative scored experiment.
+
+### [2026-05-15 18:02] - core_claim
+- Completed final verification for gym readiness.
+- Removed method-specific path assumptions from the evaluator shell entry points and clarified the graphical pendulum reference target in `scoring/reference.json`.
+- Re-ran `bash scripts/evaluate.sh`, `bash scripts/evaluate_train.sh`, `bash scripts/evaluate_test.sh`, and `python3 validate.py --compare`; all checks pass.
+
+
+### [2026-11-12] - core_claim_plus
+- Hardening iteration: the hidden test runs the predictor on instances only `eval/test/` holds and recomputes every metric from raw predictions against an independent IPOPT/Newton/IFT ground truth (see `HARDENING.md`).
+- Core claim on 193 hidden pendulum instances (paper Sec. 5.1): the exact-Hessian two-solver IFT is accurate on 1.000 of them (mean log10 relative error -7.77). The Gauss-Newton Hessian is accurate on 0.005 ("completely off", Remark 3).
+- Additional settings: Sec. 5.2 bounded-LQR adjoints over 248 parameters are accurate on 0.971 (App. A.11: adjoints match). Smoothed-map sensitivities (Fig. 2, Thm. 3) are accurate on 0.811, with a documented tau_min-dependent bias of the acados implementation.
+- Not reproduced: the wall-clock speed-ups against mpc.pytorch/cvxpygen (Table 1) and the chain example (Sec. 5.3).
+
+### [2026-11-17] - core_claim_plus
+- Final hardening iteration (see `HARDENING.md`). The smoothed-sensitivity bias was a sign error in acados' parametric constraint Hessian (`ocp_nlp_constraints_bgh.c`, also upstream). With the one-token fix the reproduced paper method gets the smoothed solution map right: 0.989 / -9.67 on 180 hidden instances (was 0.811 / -5.41), confirming Thm. 3 / Remark 2.
+- Core claim (Sec. 5.1) unchanged: the exact-Hessian IFT is accurate on 1.000 of 193 hidden instances, Gauss-Newton on 0.005. LQR adjoints (Sec. 5.2) are accurate on 0.971 (248 parameters) and 0.952 (976 parameters, scaled up).
+- Added a per-call CPU budget (process-tree accounting), under which brute-force finite differences fail, and a near-active-set-change experiment where the paper's method at its tolerance reaches 0.120.
+- Not reproduced: the wall-clock speed-ups (Table 1/2) and the chain example (Sec. 5.3).
 
 </details>
 

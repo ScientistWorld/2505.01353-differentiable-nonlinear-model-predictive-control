@@ -80,4 +80,4 @@
 - Not reproduced: the wall-clock speed-ups (Table 1/2) and the chain example (Sec. 5.3).
 
 ## Stop Justification
-- Completed at milestone `core_claim_plus`.
+- Completed at milestone `core_claim`.
