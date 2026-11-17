@@ -609,10 +609,24 @@ def _draw_lqr_large(rng, index: int):
     return theta, x0, u_max, seed
 
 
+def _draw_pendulum_perturbed(rng):
+    """Perturbed initial state only: with the fixed initial state the active-set
+    changes sit at a handful of theta values, so near-change instances of
+    different splits would nearly coincide."""
+    x0 = [
+        float(rng.uniform(-0.25, 0.25)),
+        float(math.pi / 2.0 + rng.uniform(-0.35, 0.35)),
+        float(rng.uniform(-0.5, 0.5)),
+        float(rng.uniform(-0.5, 0.5)),
+    ]
+    theta = float(rng.uniform(0.6, 1.5))
+    return theta, x0
+
+
 def build_pendulum_near_kink(rng, count: int, prefix: str, log=print):
     """tau_min = 0 pendulum instances close to a change of the active set.
 
-    A base instance is drawn as in ``build_pendulum`` and solved; theta is then
+    A base instance with a perturbed initial state is drawn and solved; theta is then
     moved along the fixed-active-set branch towards the nearest active-set
     change until the smallest strict-complementarity margin equals a
     log-uniform target in NEAR_MARGIN_RANGE.  Assumption 1 (LICQ, SOSC, strict
@@ -628,7 +642,7 @@ def build_pendulum_near_kink(rng, count: int, prefix: str, log=print):
     lo, hi = NEAR_MARGIN_RANGE
     while len(instances) < count and attempts < 8 * count:
         attempts += 1
-        theta0, x0, _ = _draw_pendulum(rng, False)
+        theta0, x0 = _draw_pendulum_perturbed(rng)
         target = float(10.0 ** rng.uniform(math.log10(lo), math.log10(hi)))
         first_dir = 1.0 if rng.random() < 0.5 else -1.0
         d = np.array(x0)

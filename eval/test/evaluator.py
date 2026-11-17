@@ -49,20 +49,20 @@ PREDICT_CMD = ["bash", os.path.join(ROOT, "scripts", "predict.sh")]
 SPLIT_SEED = 905_771_243
 SPLIT_SIZES = {"n_pend": 240, "n_smooth": 180, "n_lqr": 160}
 ID_PREFIXES = ("ps", "pt", "lq")
-EXTRA_SIZES = {"n_near": 150, "n_lqr_large": 240}
+EXTRA_SIZES = {"n_near": 150, "n_lqr_large": 470}
 EXTRA_PREFIXES = ("pk", "ll")
 
 # Compute budget per predictor call (CPU seconds of the whole process tree).
-CPU_FIXED_S = 300.0
+CPU_FIXED_S = 150.0
 EXPERIMENTS = {
     "pendulum_sensitivity_accuracy": {"kind": "scalar", "u0_tol": 1e-5, "cpu_per_instance_s": 1.0},
     "pendulum_smoothed_sensitivity": {"kind": "scalar", "u0_tol": 1e-5, "cpu_per_instance_s": 1.0},
     "pendulum_near_active_set_change": {"kind": "scalar", "u0_tol": 1e-5, "cpu_per_instance_s": 1.0},
     "bounded_lqr_adjoint_accuracy": {
-        "kind": "vector", "u0_tol": 1e-5, "n_u": 4, "n_theta": 248, "cpu_per_instance_s": 0.25,
+        "kind": "vector", "u0_tol": 1e-5, "n_u": 4, "n_theta": 248, "cpu_per_instance_s": 0.3,
     },
     "bounded_lqr_large_adjoint": {
-        "kind": "vector", "u0_tol": 1e-5, "n_u": 8, "n_theta": 976, "cpu_per_instance_s": 0.25,
+        "kind": "vector", "u0_tol": 1e-5, "n_u": 8, "n_theta": 976, "cpu_per_instance_s": 0.15,
     },
 }
 WALL_SAFETY_FACTOR = 4.0   # wall-clock safety stop: 4x the CPU budget + 10 min (never binding for CPU-bound work)

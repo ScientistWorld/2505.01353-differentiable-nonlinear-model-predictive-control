@@ -439,8 +439,11 @@ def run(instances_path: str, predictions_path: str) -> None:
     for exp_name, spec in LQR_SPECS.items():
         if exp_name in experiments:
             exact = LqrSolver(spec=spec)
-            gauss_newton = LqrSolver(hessian_approx="GAUSS_NEWTON", spec=spec)
-            predict_lqr(exact, gauss_newton, experiments[exp_name], out, exp_name=exp_name)
+            # Convex QP with linear dynamics and bounds: the Gauss-Newton Hessian
+            # (acados: exact Hessian of the quadratic EXTERNAL cost, no constraint or
+            # dynamics terms) equals the exact Lagrangian Hessian, so the baseline is
+            # the same computation; reuse the solver instead of generating a second one.
+            predict_lqr(exact, exact, experiments[exp_name], out, exp_name=exp_name)
 
     os.makedirs(os.path.dirname(os.path.abspath(predictions_path)), exist_ok=True)
     with open(predictions_path, "w", encoding="utf-8") as handle:
