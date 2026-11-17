@@ -11,7 +11,7 @@
 set -euo pipefail
 
 cd /home/user
-RUN_HARDENING_CHECKS="${RUN_HARDENING_CHECKS:-1}"  # this job: full audit (restore default 0 afterwards)
+RUN_HARDENING_CHECKS="${RUN_HARDENING_CHECKS:-0}"  # 1: also smoke test, unpatched-acados reference, variants, shortcuts
 R=/home/user/hardening/results
 
 echo "========================================"

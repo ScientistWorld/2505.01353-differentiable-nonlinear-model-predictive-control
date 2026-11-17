@@ -73,5 +73,11 @@
 - Additional settings: Sec. 5.2 bounded-LQR adjoints over 248 parameters are accurate on 0.971 (App. A.11: adjoints match). Smoothed-map sensitivities (Fig. 2, Thm. 3) are accurate on 0.811, with a documented tau_min-dependent bias of the acados implementation.
 - Not reproduced: the wall-clock speed-ups against mpc.pytorch/cvxpygen (Table 1) and the chain example (Sec. 5.3).
 
+### [2026-11-17] - core_claim_plus
+- Final hardening iteration (see `HARDENING.md`). The smoothed-sensitivity bias was a sign error in acados' parametric constraint Hessian (`ocp_nlp_constraints_bgh.c`, also upstream). With the one-token fix the reproduced paper method gets the smoothed solution map right: 0.989 / -9.67 on 180 hidden instances (was 0.811 / -5.41), confirming Thm. 3 / Remark 2.
+- Core claim (Sec. 5.1) unchanged: the exact-Hessian IFT is accurate on 1.000 of 193 hidden instances, Gauss-Newton on 0.005. LQR adjoints (Sec. 5.2) are accurate on 0.971 (248 parameters) and 0.952 (976 parameters, scaled up).
+- Added a per-call CPU budget (process-tree accounting), under which brute-force finite differences fail, and a near-active-set-change experiment where the paper's method at its tolerance reaches 0.120.
+- Not reproduced: the wall-clock speed-ups (Table 1/2) and the chain example (Sec. 5.3).
+
 ## Stop Justification
-- Completed at milestone `core_claim`.
+- Completed at milestone `core_claim_plus`.

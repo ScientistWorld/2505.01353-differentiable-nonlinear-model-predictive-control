@@ -1,8 +1,6 @@
 # Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends.
-action: submit
-gpus: 0
-test: false
-milestone: core_claim
-notes: "Final hardening check: rebuild GT for near-active-set-change pendulum (perturbed x0 only, closes train-lookup leak) and 976-parameter LQR (470 test / 200 train); final per-call CPU budget (150 s + n * {1.0, 0.3, 0.15}); reference (shared LQR solver for GN baseline) train/test; variants; all shortcuts incl. brute-force FD and detached-daemon budget evasion."
+action: done
+milestone: core_claim_plus
+notes: "Hardened: acados sign bug fixed (smoothed sensitivities 0.811/-5.41 -> 0.989/-9.67); per-call process-tree CPU budget closes brute-force FD and detached-worker evasion; new near-active-set-change (headroom 0.120 -> 0.500) and 976-parameter LQR experiments; HARDENING.md documents scores before/after and open items."

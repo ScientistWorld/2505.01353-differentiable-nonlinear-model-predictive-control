@@ -1,5 +1,5 @@
 {
-  "_note": "Every scored number is recomputed by eval/ from raw predictions (u0 and solution sensitivities) on instances the evaluator holds; the paper reports its accuracy claims graphically or verbally, so the proposed-method primary values below encode those statements (1.0 = 'sensitivities consistent with / match the reference derivative', 0.0 = 'completely off'). The scaled-up and near-active-set-change experiments are gym extensions without a paper number; their paper statements are kept under '_' keys. Compute constraint: the predictor is called once per experiment and each call may use at most CPU_FIXED_S + n_instances * cpu_per_instance_s CPU seconds over its whole process tree (eval/*/evaluator.py); an over-budget call fails the run (worst value everywhere). This encodes the paper's efficiency claim (one factorization per solution instead of one or more solves per parameter) without scoring wall-clock time. Rank: each metric's improvement over the reference run in scoring/scores_test.json, taken in its higher_is_better direction, times |coefficient| and the experiment weight, divided by the metric's spread across ranked attempts.",
+  "_note": "Every scored number is recomputed by eval/ from raw predictions (u0 and solution sensitivities) on instances the evaluator holds; the paper reports its accuracy claims graphically or verbally, so the proposed-method primary values below encode those statements (1.0 = 'sensitivities consistent with / match the reference derivative', 0.0 = 'completely off'). The scaled-up and near-active-set-change experiments are gym extensions without a paper number; their paper statements are kept under '_' keys. Compute constraint: the predictor is called once per experiment and each call may use at most 150 + n_instances * c CPU seconds over its whole process tree (c = 1.0 for the pendulum experiments, 0.3 for the 248-parameter LQR, 0.15 for the 976-parameter LQR; eval/*/evaluator.py); an over-budget call fails the run (worst value everywhere). This encodes the paper's efficiency claim (one factorization per solution instead of one or more solves per parameter) without scoring wall-clock time. Rank: each metric's improvement over the reference run in scoring/scores_test.json, taken in its higher_is_better direction, times |coefficient| and the experiment weight, divided by the metric's spread across ranked attempts.",
   "experiments": {
     "pendulum_sensitivity_accuracy": {
       "description": "Paper Sec. 5.1 / App. A.10 highly-parametric pendulum-on-cart OCP (N=50, T=2, nx=4, nu=1, n_theta=1; theta = cart mass entering cost, RK4 dynamics and the path constraint |theta*p|<=1.5), tau_min = 0. Hidden instances: theta in [0.6,1.5] and the paper's initial state (0, pi/2, 0, 0) or a perturbed one; each ships the warm start of the paper's sweep (solution on the same branch at theta -/+ 1e-3). Instances whose u0 sits at the force bound (trivially zero sensitivity) are excluded. Score: d u0 / d theta against an independent IPOPT + Newton + implicit-function-theorem ground truth. Core claim: exact-Hessian IFT sensitivities are correct (consistent with finite differences), Gauss-Newton-Hessian ones are completely off (Remark 3, Fig. 2).",
@@ -77,7 +77,7 @@
       "_paper_statement": "Remark 2 / App. A.3: 'the proposed method provides the correct sensitivities of the smoothed solution map'; Fig. 2 shows the smoothed sensitivities for tau_min in {1e-3, 1e-2} without a numeric accuracy."
     },
     "pendulum_near_active_set_change": {
-      "description": "Gym extension of Sec. 5.1 / Fig. 2 (where the paper's method is weakest): the same pendulum OCP with tau_min = 0, at parameter values close to a change of the active set. Each instance is built by following the fixed-active-set branch of a solved instance towards the nearest constraint switch until the smallest strict-complementarity margin (multiplier of an active or slack of an inactive inequality) is a log-uniform target in [1e-6, 1e-3]. Assumption 1 still holds, so d u0/d theta is well defined; the warm start (same branch at theta -/+ 1e-3) lies on the side away from the switch. Interior-point iterates blur nearly-active constraints and finite differences step across the kink, so both lose accuracy here.",
+      "description": "Gym extension of Sec. 5.1 / Fig. 2 (where the paper's method is weakest): the same pendulum OCP with tau_min = 0, at parameter values close to a change of the active set. Each instance (perturbed initial state) is built by following the fixed-active-set branch of a solved instance towards the nearest constraint switch until the smallest strict-complementarity margin (multiplier of an active or slack of an inactive inequality) is a log-uniform target in [1e-6, 1e-3]. Assumption 1 still holds, so d u0/d theta is well defined; the warm start (same branch at theta -/+ 1e-3) lies on the side away from the switch. Interior-point iterates blur nearly-active constraints and finite differences step across the kink, so both lose accuracy here.",
       "weight": 0.15,
       "primary_metric": "frac_sens_accurate",
       "metrics": {
@@ -100,7 +100,7 @@
       "results": {
         "acados_exact_hessian": {
           "type": "proposed",
-          "frac_sens_accurate": 1.0
+          "frac_sens_accurate": 0.12
         },
         "gauss_newton_approx": {
           "type": "baseline"
@@ -109,7 +109,12 @@
           "type": "baseline"
         }
       },
-      "_paper_statement": "Sec. 2.2 / Thm. 1-2: under Assumption 1 (LICQ, SOSC, strict complementarity) the exact-Hessian IFT gives the solution sensitivity; Fig. 2 shows the kinks at active-set changes. No numeric accuracy near the kinks is reported. The 1.0 above encodes that qualitative claim (exact derivatives under Assumption 1), as for the other experiments; it is not a measured paper number."
+      "_paper_statement": "Sec. 2.2 / Thm. 1-2: under Assumption 1 (LICQ, SOSC, strict complementarity) the exact-Hessian IFT gives the solution sensitivity; Fig. 2 shows the kinks at active-set changes. No numeric accuracy near the kinks is reported.",
+      "_paper_claim_encoded": {
+        "frac_sens_accurate": 1.0,
+        "note": "Encoding of the qualitative Thm. 1-2 claim (exact derivatives under Assumption 1); not a measured number and not on this gym's finite-tolerance scale."
+      },
+      "_results_note": "The paper reports no number for parameters close to an active-set change. The schema requires a value for the proposed method, so results.acados_exact_hessian holds the reproduced paper method at the paper's settings (tolerance 1e-8, clipping 1e-9) on the hidden test (scoring/scores_test.json, 0.120); it is a reproduction value, not a paper number. Instances use perturbed initial states only (with the fixed initial state the active-set changes sit at a few theta values and the splits would nearly coincide)."
     },
     "bounded_lqr_adjoint_accuracy": {
       "description": "Paper Sec. 5.2 / App. A.11 bounded LQR (N=20, nx=8, nu=4, n_theta=248 = vec(A), vec(B), b, vec(H) column-major; A = I + 0.2*M, B, b, x0 standard normal, H = I; u_max in {1, 1e4}). Score: the adjoint sensitivity d(seed . u0)/d theta (all 248 parameters, hidden random seed on u0) against an exact active-set QP ground truth. Instances with every u0 component at its bound (trivially zero adjoint) are excluded. Claim (App. A.11): acados' solutions and adjoint sensitivities match those of the independent solvers. The paper's speed-ups are wall-clock and therefore not scored here.",
@@ -209,7 +214,7 @@
       "_paper_fig3_chain": "Sec. 5.3: a single adjoint sensitivity is about 2.5x faster than the full forward Jacobian on the chain example (N=40, n_theta=113); wall-clock, not scored."
     },
     "bounded_lqr_large_adjoint": {
-      "description": "Gym extension of Sec. 5.2 / App. A.11 at twice the state and input dimension: bounded LQR with N=20, nx=16, nu=8, n_theta=976 = vec(A), vec(B), b, vec(H) column-major; A = I + 0.2*sqrt(8/nx)*M (same open-loop spread as the paper's nx=8), B, b, x0 standard normal, H = I; u_max = 1 for two thirds of the instances, 1e4 otherwise. Score: the adjoint d(seed . u0)/d theta (976 numbers) against an exact active-set QP ground truth; instances with every u0 component at its bound are excluded. The per-call CPU budget fits the paper's adjoint (one solve, one factorization, one backsolve per instance) with a wide margin but not finite differences, whose cost grows with n_theta (Sec. 2.2 'Computational complexity', Sec. 5.3).",
+      "description": "Gym extension of Sec. 5.2 / App. A.11 at twice the state and input dimension: bounded LQR with N=20, nx=16, nu=8, n_theta=976 = vec(A), vec(B), b, vec(H) column-major; A = I + 0.2*sqrt(8/nx)*M (same open-loop spread as the paper's nx=8), B, b, x0 standard normal, H = I; u_max = 1 for two thirds of the instances, 1e4 otherwise; 460 hidden instances. Score: the adjoint d(seed . u0)/d theta (976 numbers) against an exact active-set QP ground truth; instances with every u0 component at its bound are excluded. The per-call CPU budget fits the paper's adjoint (one solve, one factorization, one backsolve per instance) with a wide margin but not finite differences, whose cost grows with n_theta (Sec. 2.2 'Computational complexity', Sec. 5.3).",
       "weight": 0.2,
       "primary_metric": "frac_sens_accurate",
       "metrics": {
