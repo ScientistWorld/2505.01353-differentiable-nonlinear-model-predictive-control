@@ -41,13 +41,13 @@
     "pendulum_near_active_set_change": {
       "results": {
         "acados_exact_hessian": {
-          "frac_sens_accurate": 0.08333333333333333,
-          "mean_log10_sens_rel_err": -1.357076400347772,
+          "frac_sens_accurate": 0.06666666666666667,
+          "mean_log10_sens_rel_err": -1.3331467298534576,
           "frac_u0_accurate": 0.9833333333333333
         },
         "gauss_newton_approx": {
           "frac_sens_accurate": 0.0,
-          "mean_log10_sens_rel_err": -0.1317061416602659,
+          "mean_log10_sens_rel_err": -0.30772921801794817,
           "frac_u0_accurate": 0.9833333333333333
         },
         "unconstrained_ift": {
@@ -80,13 +80,13 @@
       "results": {
         "acados_exact_hessian": {
           "frac_sens_accurate": 0.9595959595959596,
-          "mean_log10_sens_rel_err": -8.045453537690461,
-          "frac_u0_accurate": 1.0
+          "mean_log10_sens_rel_err": -8.064001198254754,
+          "frac_u0_accurate": 0.9949494949494949
         },
         "gauss_newton_approx": {
           "frac_sens_accurate": 0.9595959595959596,
-          "mean_log10_sens_rel_err": -8.045453537690461,
-          "frac_u0_accurate": 1.0
+          "mean_log10_sens_rel_err": -8.064001198254754,
+          "frac_u0_accurate": 0.9949494949494949
         },
         "unconstrained_ift": {
           "frac_sens_accurate": 0.35353535353535354,
@@ -103,32 +103,32 @@
       "pendulum_smoothed_sensitivity": 90,
       "pendulum_near_active_set_change": 60,
       "bounded_lqr_adjoint_accuracy": 69,
-      "bounded_lqr_large_adjoint": 99
+      "bounded_lqr_large_adjoint": 198
     },
     "cpu": {
       "pendulum_sensitivity_accuracy": {
-        "cpu_s": 15.35,
-        "budget_s": 403.0,
+        "cpu_s": 13.41,
+        "budget_s": 253.0,
         "within_budget": true
       },
       "pendulum_smoothed_sensitivity": {
-        "cpu_s": 13.33,
-        "budget_s": 390.0,
+        "cpu_s": 12.11,
+        "budget_s": 240.0,
         "within_budget": true
       },
       "pendulum_near_active_set_change": {
-        "cpu_s": 12.1,
-        "budget_s": 360.0,
+        "cpu_s": 12.52,
+        "budget_s": 210.0,
         "within_budget": true
       },
       "bounded_lqr_adjoint_accuracy": {
-        "cpu_s": 12.33,
-        "budget_s": 317.25,
+        "cpu_s": 6.01,
+        "budget_s": 170.7,
         "within_budget": true
       },
       "bounded_lqr_large_adjoint": {
-        "cpu_s": 105.94,
-        "budget_s": 324.75,
+        "cpu_s": 45.8,
+        "budget_s": 179.7,
         "within_budget": true
       }
     },
