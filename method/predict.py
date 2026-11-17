@@ -11,7 +11,8 @@ it; the method never sees answers).  PREDICTIONS_JSON must contain
     {"methods": {<method_name>: {<experiment>: {<instance_id>: {...}}}}}
 
 with ``{"u0": float, "du0_dtheta": float}`` for the pendulum experiments and
-``{"u0": [4 floats], "adjoint": [248 floats]}`` for the bounded-LQR one.
+``{"u0": [nu floats], "adjoint": [n_theta floats]}`` for the bounded-LQR ones
+(nu = 4, n_theta = 248 at the paper's size; nu = 8, n_theta = 976 scaled up).
 
 Methods written by this reference predictor:
 
@@ -42,8 +43,13 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import run_reproduction as rr  # noqa: E402
 
-PEND_EXPERIMENTS = ("pendulum_sensitivity_accuracy", "pendulum_smoothed_sensitivity")
+PEND_EXPERIMENTS = (
+    "pendulum_sensitivity_accuracy",
+    "pendulum_smoothed_sensitivity",
+    "pendulum_near_active_set_change",
+)
 LQR_EXPERIMENT = "bounded_lqr_adjoint_accuracy"
+LQR_LARGE_EXPERIMENT = "bounded_lqr_large_adjoint"
 
 PROPOSED = "acados_exact_hessian"
 GAUSS_NEWTON = "gauss_newton_approx"
@@ -63,6 +69,8 @@ PEND_SPEC = {
     "R": 0.2,
 }
 LQR_SPEC = {"N": 20, "nx": 8, "nu": 4, "n_theta": 248, "dt": 1.0}
+LQR_LARGE_SPEC = {"N": 20, "nx": 16, "nu": 8, "n_theta": 976, "dt": 1.0}
+LQR_SPECS = {LQR_EXPERIMENT: LQR_SPEC, LQR_LARGE_EXPERIMENT: LQR_LARGE_SPEC}
 
 
 def _check_spec(problem: dict, expected: dict, label: str) -> None:
@@ -295,9 +303,10 @@ class LqrSolver:
     """Bounded-LQR OCP with all of (A, B, b, H) as global parameters."""
 
     def __init__(self, tag: str = "", hessian_approx: str = "EXACT", sens_t_lam_min: float | None = None,
-                 max_iter: int = 50):
+                 max_iter: int = 50, spec: dict | None = None):
         ca, AcadosModel, AcadosOcp, AcadosOcpSolver = rr._import_acados()
-        nx, nu, n_horizon = LQR_SPEC["nx"], LQR_SPEC["nu"], LQR_SPEC["N"]
+        spec = LQR_SPEC if spec is None else spec
+        nx, nu, n_horizon = spec["nx"], spec["nu"], spec["N"]
         self.nx, self.nu, self.N = nx, nu, n_horizon
         n_a, n_b, n_bias, n_h = nx * nx, nx * nu, nx, (nx + nu) * (nx + nu)
         p = ca.SX.sym("p", n_a + n_b + n_bias + n_h)
@@ -307,7 +316,8 @@ class LqrSolver:
         bias_sym = p[n_a + n_b : n_a + n_b + n_bias]
         h_sym = ca.reshape(p[n_a + n_b + n_bias :], nx + nu, nx + nu)
 
-        name = f"lqr_{hessian_approx.lower()}{tag}"
+        size = "" if (nx, nu) == (LQR_SPEC["nx"], LQR_SPEC["nu"]) else f"{nx}x{nu}_"
+        name = f"lqr_{size}{hessian_approx.lower()}{tag}"
         ocp = AcadosOcp()
         ocp.model = AcadosModel()
         ocp.model.name = name
@@ -385,10 +395,11 @@ def _lqr_instance(inst: dict):
     return theta, x0, float(inst["u_max"]), np.array([float(v) for v in inst["seed_u0"]], dtype=float)
 
 
-def predict_lqr(exact: LqrSolver, gauss_newton: LqrSolver, experiment: dict, out: dict, log=print) -> None:
-    _check_spec(experiment.get("problem", {}), LQR_SPEC, LQR_EXPERIMENT)
+def predict_lqr(exact: LqrSolver, gauss_newton: LqrSolver, experiment: dict, out: dict, log=print,
+                exp_name: str = LQR_EXPERIMENT) -> None:
+    _check_spec(experiment.get("problem", {}), LQR_SPECS[exp_name], exp_name)
     for name in (PROPOSED, GAUSS_NEWTON, UNCONSTRAINED):
-        out.setdefault(name, {}).setdefault(LQR_EXPERIMENT, {})
+        out.setdefault(name, {}).setdefault(exp_name, {})
     statuses: dict[int, int] = {}
     for inst in experiment["instances"]:
         iid = inst["id"]
@@ -404,10 +415,10 @@ def predict_lqr(exact: LqrSolver, gauss_newton: LqrSolver, experiment: dict, out
                     statuses[status] = statuses.get(status, 0) + 1
                 adj = solver.adjoint(seed)
                 if _finite(u0, adj):
-                    out[name][LQR_EXPERIMENT][iid] = {"u0": u0.tolist(), "adjoint": adj.tolist()}
+                    out[name][exp_name][iid] = {"u0": u0.tolist(), "adjoint": adj.tolist()}
             except Exception as exc:
-                log(f"[predict] {LQR_EXPERIMENT}/{iid}/{name} failed: {exc}")
-    log(f"[predict] {LQR_EXPERIMENT}: {len(experiment['instances'])} instances, status histogram {statuses}")
+                log(f"[predict] {exp_name}/{iid}/{name} failed: {exc}")
+    log(f"[predict] {exp_name}: {len(experiment['instances'])} instances, status histogram {statuses}")
 
 
 # ---------------------------------------------------------------------------
@@ -425,10 +436,11 @@ def run(instances_path: str, predictions_path: str) -> None:
         for exp_name in PEND_EXPERIMENTS:
             if exp_name in experiments:
                 predict_pendulum(solvers, experiments[exp_name], out, exp_name)
-    if LQR_EXPERIMENT in experiments:
-        exact = LqrSolver()
-        gauss_newton = LqrSolver(hessian_approx="GAUSS_NEWTON")
-        predict_lqr(exact, gauss_newton, experiments[LQR_EXPERIMENT], out)
+    for exp_name, spec in LQR_SPECS.items():
+        if exp_name in experiments:
+            exact = LqrSolver(spec=spec)
+            gauss_newton = LqrSolver(hessian_approx="GAUSS_NEWTON", spec=spec)
+            predict_lqr(exact, gauss_newton, experiments[exp_name], out, exp_name=exp_name)
 
     os.makedirs(os.path.dirname(os.path.abspath(predictions_path)), exist_ok=True)
     with open(predictions_path, "w", encoding="utf-8") as handle:

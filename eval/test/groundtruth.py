@@ -52,8 +52,13 @@ PEND = {
     "R": 0.2,
 }
 LQR = {"N": 20, "nx": 8, "nu": 4, "n_theta": 248, "dt": 1.0}
+# Scaled-up bounded LQR (same recipe, twice the state/input dimension):
+# n_theta = nx^2 + nx*nu + nx + (nx+nu)^2 = 976.
+LQR_LARGE = {"N": 20, "nx": 16, "nu": 8, "n_theta": 976, "dt": 1.0}
 
 MARGIN_MIN = 1e-7      # strict-complementarity margin required for tau_min = 0
+NEAR_MARGIN_RANGE = (1e-6, 1e-3)   # target smallest margin of near-active-set-change instances
+NEAR_THETA_LIMITS = (0.4, 1.8)     # theta range searched along the fixed-active-set branch
 NEWTON_TOL = 1e-9      # accepted KKT residual (inf-norm) after refinement
 FD_REJECT_SMOOTH = 1e-6
 FD_REJECT_BARRIER = 1e-4
@@ -128,8 +133,9 @@ def _pendulum_nlp():
     }
 
 
-def _lqr_nlp():
-    N, nx, nu = LQR["N"], LQR["nx"], LQR["nu"]
+def _lqr_nlp(spec=None):
+    spec = LQR if spec is None else spec
+    N, nx, nu = spec["N"], spec["nx"], spec["nu"]
     n_a, n_b, n_bias, n_h = nx * nx, nx * nu, nx, (nx + nu) * (nx + nu)
     theta = ca.SX.sym("theta", n_a + n_b + n_bias + n_h)
     data = ca.SX.sym("data", nx + 1)  # x0 and u_max
@@ -148,7 +154,7 @@ def _lqr_nlp():
     f = 0
     for n in range(N):
         xu = ca.vertcat(X[n], U[n])
-        f += LQR["dt"] * (xu.T @ H @ xu)
+        f += spec["dt"] * (xu.T @ H @ xu)
     f += X[N].T @ H[:nx, :nx] @ X[N]
     geq = [X[0] - x0p]
     for n in range(N):
@@ -432,6 +438,99 @@ def _richardson_directional(kkt, sol, th, d, tau, direction, seed_u0, h):
 
 
 # ---------------------------------------------------------------------------
+# Near-active-set-change instances (tau_min = 0)
+# ---------------------------------------------------------------------------
+
+
+def _min_margin(kkt: KKT, w, theta: float, d, act) -> float:
+    """Smallest strict-complementarity margin of w for the active set ``act``:
+    multipliers of active inequalities and slacks -h of inactive ones."""
+    nz, ng = kkt.nz, kkt.ng
+    _, h = kkt.fh(w[:nz], np.array([theta]), d)
+    h = np.asarray(h.full()).ravel()
+    mu = w[nz + ng :]
+    return float(np.min(np.where(act > 0.5, mu, -h)))
+
+
+def _branch_newton(kkt: KKT, w_start, theta: float, d, act):
+    """KKT point with the fixed active set ``act`` at ``theta`` (Newton from w_start)."""
+    try:
+        w, res = kkt.newton(w_start, np.array([theta]), d, act, 0.0, 0.0)
+    except Exception:
+        return None, math.inf
+    if not res <= NEWTON_TOL:
+        return None, res
+    return w, res
+
+
+def _approach_kink(kkt: KKT, sol, theta0: float, d, target: float, first_dir: float):
+    """Follow the fixed-active-set branch of ``sol`` from theta0 towards the
+    nearest change of the active set until the smallest strict-complementarity
+    margin equals ``target`` (within 10 %).  Returns (theta, solution dict) or None.
+
+    The fixed-active-set system stays smooth across the change, so the margin
+    is a smooth function of theta along it: march until it drops below the
+    target, then bracket the target by safeguarded regula falsi."""
+    act = sol["act"]
+    lo_th, hi_th = NEAR_THETA_LIMITS
+    for s in (first_dir, -first_dir):
+        t, w = 0.0, sol["w"]
+        g = _min_margin(kkt, w, theta0, d, act)
+        if not g > target:
+            continue
+        step, bracket = 0.01, None
+        for _ in range(400):
+            th1 = theta0 + s * (t + step)
+            if th1 < lo_th or th1 > hi_th:
+                break
+            w1, _ = _branch_newton(kkt, w, th1, d, act)
+            if w1 is None:
+                step *= 0.5
+                if step < 1e-9:
+                    break
+                continue
+            g1 = _min_margin(kkt, w1, th1, d, act)
+            if g1 <= target:
+                bracket = (t, w, g, t + step, g1)
+                break
+            t, w, g = t + step, w1, g1
+            step = min(2.0 * step, 0.04)
+        if bracket is None:
+            continue
+        ta, wa, ga, tb, gb = bracket
+        for it in range(100):
+            tm = 0.5 * (ta + tb)
+            if it % 2 == 0 and ga != gb:
+                cand = ta + (ga - target) * (tb - ta) / (ga - gb)
+                if ta < cand < tb:
+                    tm = cand
+            wm, res = _branch_newton(kkt, wa, theta0 + s * tm, d, act)
+            if wm is None:
+                break
+            gm = _min_margin(kkt, wm, theta0 + s * tm, d, act)
+            if abs(gm - target) <= 0.1 * target and gm >= MARGIN_MIN:
+                near = {
+                    "w": wm,
+                    "act": act,
+                    "smooth": 0.0,
+                    "u0": wm[: kkt.nz][kkt.nlp["u0_idx"]].copy(),
+                    "margin": gm,
+                    "newton_res": res,
+                    "n_local_minima_seen": sol.get("n_local_minima_seen", 1),
+                    "theta_base": theta0,
+                    "direction": s,
+                }
+                return theta0 + s * tm, near
+            if gm > target:
+                ta, wa, ga = tm, wm, gm
+            else:
+                tb, gb = tm, gm
+            if tb - ta < 1e-15:
+                break
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Instance generators
 # ---------------------------------------------------------------------------
 
@@ -494,6 +593,100 @@ def _draw_lqr(rng, index: int):
     return theta, x0, u_max, seed
 
 
+def _draw_lqr_large(rng, index: int):
+    """Paper App. A.11 recipe at nx = 16, nu = 8.  A = I + 0.2*sqrt(8/nx)*M keeps
+    the open-loop spectral spread of the paper's nx = 8 case; two thirds of the
+    instances use the binding bound u_max = 1."""
+    nx, nu = LQR_LARGE["nx"], LQR_LARGE["nu"]
+    A = np.eye(nx) + 0.2 * math.sqrt(8.0 / nx) * rng.standard_normal((nx, nx))
+    B = rng.standard_normal((nx, nu))
+    b = rng.standard_normal(nx)
+    H = np.eye(nx + nu)
+    theta = np.concatenate([A.flatten(order="F"), B.flatten(order="F"), b, H.flatten(order="F")])
+    x0 = rng.standard_normal(nx)
+    u_max = 1e4 if index % 3 == 0 else 1.0
+    seed = rng.standard_normal(nu)
+    return theta, x0, u_max, seed
+
+
+def build_pendulum_near_kink(rng, count: int, prefix: str, log=print):
+    """tau_min = 0 pendulum instances close to a change of the active set.
+
+    A base instance is drawn as in ``build_pendulum`` and solved; theta is then
+    moved along the fixed-active-set branch towards the nearest active-set
+    change until the smallest strict-complementarity margin equals a
+    log-uniform target in NEAR_MARGIN_RANGE.  Assumption 1 (LICQ, SOSC, strict
+    complementarity) still holds, so the derivative is well defined; the
+    warm start (same branch at theta -/+ 1e-3) lies on the side away from the
+    change."""
+    nlp = _pendulum_nlp()
+    kkt = KKT(nlp)
+    instances, answers, diags = [], {}, {}
+    rejected: dict[str, int] = {}
+    attempts = 0
+    t0 = time.time()
+    lo, hi = NEAR_MARGIN_RANGE
+    while len(instances) < count and attempts < 8 * count:
+        attempts += 1
+        theta0, x0, _ = _draw_pendulum(rng, False)
+        target = float(10.0 ** rng.uniform(math.log10(lo), math.log10(hi)))
+        first_dir = 1.0 if rng.random() < 0.5 else -1.0
+        d = np.array(x0)
+        try:
+            sol, _ = _solve_instance(kkt, np.array([theta0]), d, 0.0, _pendulum_inits(nlp, x0, theta0))
+            if isinstance(sol, str):
+                rejected[sol] = rejected.get(sol, 0) + 1
+                continue
+            found = _approach_kink(kkt, sol, theta0, d, target, first_dir)
+            if found is None:
+                rejected["no_active_set_change_in_range"] = rejected.get("no_active_set_change_in_range", 0) + 1
+                continue
+            theta, near = found
+            if abs(abs(float(near["u0"][0])) - PEND["f_max"]) < 1e-6:
+                rejected["u0_at_force_bound"] = rejected.get("u0_at_force_bound", 0) + 1
+                continue
+            th = np.array([theta])
+            seed_w = np.zeros(kkt.nw)
+            seed_w[nlp["u0_idx"][0]] = 1.0
+            grad, cond = kkt.adjoint(near["w"], th, d, near["act"], 0.0, 0.0, seed_w)
+        except Exception as exc:
+            key = f"exception:{type(exc).__name__}"
+            rejected[key] = rejected.get(key, 0) + 1
+            continue
+        sens = float(grad[0])
+        fd = _richardson_directional(kkt, near, th, d, 0.0, np.array([1.0]), np.array([1.0]), 1e-4)
+        fd_rel = math.inf if fd is None else abs(fd - sens) / max(1.0, abs(sens))
+        if not (fd_rel <= FD_REJECT_SMOOTH) or not math.isfinite(sens):
+            rejected["fd_cross_check"] = rejected.get("fd_cross_check", 0) + 1
+            continue
+        guess = _pendulum_guess(kkt, near, theta, d, 0.0, len(instances))
+        if guess is None:
+            rejected["no_branch_warm_start"] = rejected.get("no_branch_warm_start", 0) + 1
+            continue
+        iid = f"{prefix}{len(instances):04d}"
+        instances.append({"id": iid, "theta": float(theta), "x0": x0, "tau_min": 0.0, "initial_guess": guess})
+        answers[iid] = {"u0": float(near["u0"][0]), "du0_dtheta": sens}
+        diags[iid] = {
+            "fd_rel_diff": fd_rel,
+            "kkt_cond": cond,
+            "margin": near["margin"],
+            "target_margin": target,
+            "theta_base": near["theta_base"],
+            "newton_res": near["newton_res"],
+            "n_local_minima_seen": near["n_local_minima_seen"],
+            "n_active": int(np.sum(near["act"])),
+        }
+        if len(instances) % 25 == 0:
+            log(f"[groundtruth] {prefix}: {len(instances)}/{count} after {attempts} draws, {time.time() - t0:.0f}s")
+    log(
+        f"[groundtruth] {prefix}: {len(instances)}/{count} accepted from {attempts} draws "
+        f"in {time.time() - t0:.1f}s; rejected={rejected}"
+    )
+    if len(instances) < count:
+        raise RuntimeError(f"could only build {len(instances)} of {count} near-active-set-change instances")
+    return instances, answers, diags
+
+
 def build_pendulum(rng, count: int, smoothed: bool, prefix: str, log=print):
     nlp = _pendulum_nlp()
     kkt = KKT(nlp)
@@ -550,10 +743,12 @@ def build_pendulum(rng, count: int, smoothed: bool, prefix: str, log=print):
     return instances, answers, diags
 
 
-def build_lqr(rng, count: int, prefix: str, log=print):
-    nlp = _lqr_nlp()
+def build_lqr(rng, count: int, prefix: str, log=print, spec=None, draw=None):
+    spec = LQR if spec is None else spec
+    draw = _draw_lqr if draw is None else draw
+    nlp = _lqr_nlp(spec)
     kkt = KKT(nlp)
-    nx = LQR["nx"]
+    nx = spec["nx"]
     instances, answers, diags = [], {}, {}
     rejected: dict[str, int] = {}
     attempts = 0
@@ -561,7 +756,7 @@ def build_lqr(rng, count: int, prefix: str, log=print):
     while len(instances) < count and attempts < 4 * count:
         index = len(instances)
         attempts += 1
-        theta, x0, u_max, seed = _draw_lqr(rng, index)
+        theta, x0, u_max, seed = draw(rng, index)
         d = np.concatenate([x0, [u_max]])
         z_init = np.zeros(kkt.nz)
         z_init[:nx] = x0
@@ -603,6 +798,8 @@ def build_lqr(rng, count: int, prefix: str, log=print):
             "newton_res": sol["newton_res"],
             "n_active": int(np.sum(sol["act"])),
         }
+        if len(instances) % 25 == 0:
+            log(f"[groundtruth] {prefix}: {len(instances)}/{count} after {attempts} draws, {time.time() - t0:.0f}s")
     log(
         f"[groundtruth] {prefix}: {len(instances)}/{count} accepted from {attempts} draws "
         f"in {time.time() - t0:.1f}s; rejected={rejected}"
@@ -627,14 +824,67 @@ def pendulum_problem_spec(smoothed: bool) -> dict:
     return spec
 
 
-def lqr_problem_spec() -> dict:
-    spec = dict(LQR)
+def pendulum_near_kink_problem_spec() -> dict:
+    spec = pendulum_problem_spec(False)
+    spec["instances_note"] = (
+        "each theta lies close to a change of the active set (smallest strict-complementarity margin "
+        "in [1e-6, 1e-3]); the solution map is differentiable there and the warm start lies on the "
+        "side away from the change"
+    )
+    return spec
+
+
+def lqr_problem_spec(lqr=None) -> dict:
+    lqr = LQR if lqr is None else lqr
+    nx, nu = lqr["nx"], lqr["nu"]
+    spec = dict(lqr)
     spec["name"] = "bounded_lqr"
-    spec["theta_layout"] = "[vec(A) 64, vec(B) 32, b 8, vec(H) 144], column-major vec"
+    spec["theta_layout"] = (
+        f"[vec(A) {nx * nx}, vec(B) {nx * nu}, b {nx}, vec(H) {(nx + nu) ** 2}], column-major vec"
+    )
     spec["cost"] = "sum_{n<N} dt*[x;u]'H[x;u] + x_N' H[:nx,:nx] x_N"
     spec["constraints"] = "x_0 = x0; x_{n+1} = A x_n + B u_n + b; |u_n| <= u_max (elementwise)"
-    spec["output"] = {"u0": "list of nu floats", "adjoint": "list of 248 floats = d(seed_u0 . u0)/d theta"}
+    spec["output"] = {
+        "u0": "list of nu floats",
+        "adjoint": f"list of {lqr['n_theta']} floats = d(seed_u0 . u0)/d theta",
+    }
     return spec
+
+
+EXTRA_EXPERIMENTS = ("pendulum_near_active_set_change", "bounded_lqr_large_adjoint")
+
+
+def build_extra(out: dict, seed: int, n_near: int, n_lqr_large: int, prefixes=("pk", "ll"), log=print,
+                save=None) -> dict:
+    """Add the near-active-set-change pendulum and the scaled-up LQR experiment
+    to an existing split (``out``), each from its own RNG stream so that every
+    experiment is reproducible on its own; ``save(out)`` is called after each."""
+    exps = out.setdefault("experiments", {})
+    if "pendulum_near_active_set_change" not in exps:
+        rng = np.random.default_rng([seed, 1])
+        inst, ans, diag = build_pendulum_near_kink(rng, n_near, prefixes[0], log=log)
+        exps["pendulum_near_active_set_change"] = {
+            "problem": pendulum_near_kink_problem_spec(),
+            "instances": inst,
+            "answers": ans,
+            "diagnostics": diag,
+        }
+        drop_trivial_instances(out)
+        if save:
+            save(out)
+    if "bounded_lqr_large_adjoint" not in exps:
+        rng = np.random.default_rng([seed, 2])
+        inst, ans, diag = build_lqr(rng, n_lqr_large, prefixes[1], log=log, spec=LQR_LARGE, draw=_draw_lqr_large)
+        exps["bounded_lqr_large_adjoint"] = {
+            "problem": lqr_problem_spec(LQR_LARGE),
+            "instances": inst,
+            "answers": ans,
+            "diagnostics": diag,
+        }
+        drop_trivial_instances(out)
+        if save:
+            save(out)
+    return out
 
 
 def build_split(seed: int, n_pend: int, n_smooth: int, n_lqr: int, prefixes=("ps", "pt", "lq"), log=print,
@@ -703,11 +953,17 @@ def drop_trivial_instances(out: dict) -> dict:
     consumes no random draws, so rebuilding reproduces the same instance set.
     """
     exps = out["experiments"]
+    def lqr_rule(inst, ans):
+        return all(abs(abs(u) - inst["u_max"]) < 1e-9 * max(1.0, inst["u_max"]) for u in ans["u0"])
+
+    def pend_rule(inst, ans):
+        return abs(abs(ans["u0"]) - PEND["f_max"]) < 1e-6
+
     rules = {
-        "pendulum_sensitivity_accuracy": lambda inst, ans: abs(abs(ans["u0"]) - PEND["f_max"]) < 1e-6,
-        "bounded_lqr_adjoint_accuracy": lambda inst, ans: all(
-            abs(abs(u) - inst["u_max"]) < 1e-9 * max(1.0, inst["u_max"]) for u in ans["u0"]
-        ),
+        "pendulum_sensitivity_accuracy": pend_rule,
+        "pendulum_near_active_set_change": pend_rule,
+        "bounded_lqr_adjoint_accuracy": lqr_rule,
+        "bounded_lqr_large_adjoint": lqr_rule,
     }
     for name, trivial in rules.items():
         if name not in exps:

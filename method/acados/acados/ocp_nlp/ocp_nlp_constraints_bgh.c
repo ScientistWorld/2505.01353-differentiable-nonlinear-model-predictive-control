@@ -1768,7 +1768,13 @@ void ocp_nlp_constraints_bgh_compute_jac_hess_p(void *config_, void *dims_, void
                     ext_fun_type_in, ext_fun_in, ext_fun_type_out, ext_fun_out);
 
         // add constraint contribution to stationarity jacobian wrt p_global
-        blasfeo_dgead(nx+nu, np_global, -1.0, &work->jac_lag_p_global, 0, 0, memory->jac_lag_stat_p_global, 0, 0);
+        // GYM SIGN FIX: tmp_nh = lam_upper - lam_lower, the Lagrangian contains
+        // +(lam_upper - lam_lower)^T h (cf. the Hessian contribution added with +1.0
+        // in update_qp_matrices and the residual convention res_stat = grad f - ineq_adj
+        // with ineq_adj = DCt (lam_lower - lam_upper)), so d/dp of its ux-gradient
+        // must be added with +1.0. Upstream (and the vendored commit) used -1.0, which
+        // biases every tau_min > 0 sensitivity of a constraint with d2h/dux dp != 0.
+        blasfeo_dgead(nx+nu, np_global, 1.0, &work->jac_lag_p_global, 0, 0, memory->jac_lag_stat_p_global, 0, 0);
     }
 }
 

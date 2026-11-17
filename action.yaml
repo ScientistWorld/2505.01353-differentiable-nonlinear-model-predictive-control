@@ -1,6 +1,8 @@
 # Once you set action to 'submit' or 'done', STOP immediately.
 # Do NOT sleep, poll, or wait for jobs. The system reads this file
 # only after your turn ends.
-action: done
-milestone: core_claim_plus
-notes: "Hardened gym: hidden test runs the predictor on eval/test-only instances, scores raw u0/sensitivities vs independent IPOPT+Newton+IFT ground truth; better variants score higher (paired ~10 SE), all reported shortcuts closed; tight-tolerance brute-force FD and acados smoothed-sensitivity bias documented as open in HARDENING.md."
+action: submit
+gpus: 0
+test: false
+milestone: core_claim
+notes: "Hardening job: smoke test; GT for new experiments (near-active-set-change pendulum, 976-parameter LQR); reference with unpatched acados (before); acados sign-fix rebuild; reference train/test under per-call CPU budget; variants, brute-force FD and budget-evasion shortcuts through the evaluators."

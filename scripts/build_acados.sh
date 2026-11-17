@@ -29,7 +29,10 @@ rm -f "${ACADOS_DIR}/lib/libqpOASES_e.so"
 rm -f "${ACADOS_DIR}/lib/libblasfeo.so" \
       "${ACADOS_DIR}/lib/libblasfeo.so.0" \
       "${ACADOS_DIR}/lib/libblasfeo.so.0.1.4.2"
-rm -f "${ACADOS_DIR}/lib/git_commit_hash" "${ACADOS_DIR}/lib/link_libs.json"
+rm -f "${ACADOS_DIR}/lib/git_commit_hash" "${ACADOS_DIR}/lib/link_libs.json" "${ACADOS_DIR}/lib/.gym_sign_fix"
+
+# The gym's one-line sign fix of the parametric constraint Hessian (see the script).
+bash /home/user/scripts/patch_acados.sh
 
 mkdir -p "${ACADOS_DIR}/build"
 cd "${ACADOS_DIR}/build"
@@ -41,3 +44,4 @@ cmake -DACADOS_WITH_QPOASES=ON \
       -DACADOS_EXTERNAL_HPMPC=OFF \
       ..
 make install -j"$(nproc)"
+touch "${ACADOS_DIR}/lib/.gym_sign_fix"
